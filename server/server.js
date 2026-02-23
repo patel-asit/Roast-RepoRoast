@@ -24,7 +24,7 @@ app.post('/roast', async (req, res) => {
     }
 
     const chatResponse = await mistral.chat.complete({
-      model: 'mistral-medium-latest',
+      model: 'mistral-large-latest',
       messages: [
         { role: 'system', content: roastPrompt(profanity) },
         { role: 'user', content: JSON.stringify(repo_summary) },
