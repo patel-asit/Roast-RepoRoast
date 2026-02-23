@@ -3,7 +3,7 @@
 // Client-side GitHub API calls (uses user's IP, no auth needed for public repos)
 
 import { grabFileTreeAndImportantFileContents, type FileContent } from "./filetree";
-import { githubFetch, type GitHubFetchError } from "./gh-fetch";
+import { githubFetch, type GitHubFetchError } from "./github-fetch";
 
 export type { GitHubFetchError };
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Facehash } from "facehash"
-import CountUp from "./ui/CountUp"
+import CountUp from "./ui/count-up"
 
 const AVATAR_NAMES = [
   "agent-47",

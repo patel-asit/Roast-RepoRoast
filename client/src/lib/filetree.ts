@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { githubFetch } from "./gh-fetch";
+import { githubFetch } from "./github-fetch";
 import {
   MAX_FILES_TO_RETURN,
   MAX_FILE_CONTENT_CHARS,
-  MAX_TREE_ENTRIES,
   NOISE_DIR_PREFIXES,
   NOISE_FILE_EXTENSIONS,
   NOISE_EXACT_FILES,
@@ -96,59 +95,21 @@ async function fetchFileTree(
 async function pickImportantFiles(
   filteredPaths: string[]
 ): Promise<MistralFileSelection> {
-  const mistralKey = process.env.NEXT_PUBLIC_MISTRAL_API_KEY;
-  if (!mistralKey) throw new Error("NEXT_PUBLIC_MISTRAL_API_KEY not set");
+  const serverUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-  const prompt = `You are analyzing a GitHub repository file tree to identify the most important files for understanding what the project does and how it is structured.
-
-File tree (already filtered, noise removed):
-${filteredPaths.slice(0, MAX_TREE_ENTRIES).join("\n")}
-
-Your job: Pick up to ${MAX_FILES_TO_RETURN} files that would give the best insight into:
-- What the project does (entry points, main modules, core logic)
-- How it is configured (config files, environment setup)
-- Its quality and structure (tests, CI, linting)
-
-Rules:
-- Prefer entry points (main.py, index.ts, app.tsx, server.js, main.rs, etc.)
-- Include key config files (Dockerfile, .github/workflows, tsconfig.json, pyproject.toml, etc.)
-- Include at least one test file if present
-- Skip files that are clearly generated, vendored, or boilerplate
-- Account for all language ecosystems (JS/TS, Python, Rust, Go, Ruby, Java, etc.)
-
-Respond ONLY with valid JSON in this exact shape:
-{
-  "files": ["path/to/file1", "path/to/file2"]
-}`;
-
-  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+  const res = await fetch(`${serverUrl}/pick-files`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${mistralKey}`,
-    },
-    body: JSON.stringify({
-      model: "mistral-small-latest",
-      temperature: 0,
-      max_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paths: filteredPaths }),
   });
 
-  if (!res.ok) throw new Error(`Mistral API error: ${res.status}`);
+  if (!res.ok) throw new Error(`pick-files server error: ${res.status}`);
 
-  const data = await res.json();
-  const raw = data.choices?.[0]?.message?.content ?? "{}";
-
-  // Strip markdown fences if model wraps in ```json
-  const cleaned = raw.replace(/```json|```/g, "").trim();
-  return JSON.parse(cleaned) as MistralFileSelection;
+  return res.json() as Promise<MistralFileSelection>;
 }
 
-// ------------------------------------------------------------------ //
-// Main Export
-// ------------------------------------------------------------------ //
-
+// grabs the full file tree, filters out noise, picks important files via LLM, fetches their contents, 
+// and returns everything in a compact format for the main LLM to consume.
 export async function grabFileTreeAndImportantFileContents(
   owner: string,
   repo: string,

@@ -153,8 +153,8 @@ export function RecentlyDestroyed() {
             "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
         }}
       >
-        {/* <MarqueeRow startups={ROW_ONE} direction="left" speed={35} />
-        <MarqueeRow startups={ROW_TWO} direction="right" speed={40} /> */}
+        <MarqueeRow startups={ROW_ONE} direction="left" speed={35} />
+        <MarqueeRow startups={ROW_TWO} direction="right" speed={40} />
       </div>
 
       <div className="mt-10 text-center">

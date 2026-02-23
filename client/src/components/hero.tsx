@@ -9,6 +9,7 @@ export function HeroSection() {
   const [result, setResult] = useState<RepoSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [profanity, setProfanity] = useState(true)
 
   const handleDestroyClick = async () => {
     setLoading(true)
@@ -34,20 +35,35 @@ export function HeroSection() {
             {"Drop your repo URL. We'll find every bullshit thing you put in your code."}
           </p>
 
-          <div className="mt-10 flex w-full max-w-xl">
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="paste-your-shitty-repo-url-here"
-              className="flex-1 border-2 border-ink bg-card text-card-foreground px-4 py-3 text-sm font-normal tracking-normal placeholder:text-muted-foreground focus:outline-none"
-            />
+          <div className="mt-10 flex w-full max-w-xl flex-col gap-3">
+            <div className="flex">
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="paste-your-shitty-repo-url-here"
+                className="flex-1 border-2 border-ink bg-card text-card-foreground px-4 py-3 text-sm font-normal tracking-normal placeholder:text-muted-foreground focus:outline-none"
+              />
+              <button
+                onClick={handleDestroyClick}
+                disabled={loading}
+                className="border-2 border-ink border-l-0 bg-ink text-primary-foreground px-6 md:px-8 py-3 text-sm font-bold uppercase tracking-widest hover:bg-yellow hover:text-ink transition-all duration-100 cursor-pointer shrink-0 disabled:opacity-50"
+              >
+                {loading ? "Destroying..." : "Destroy It"}
+              </button>
+            </div>
+
             <button
-              onClick={handleDestroyClick}
-              disabled={loading}
-              className="border-2 border-ink border-l-0 bg-ink text-primary-foreground px-6 md:px-8 py-3 text-sm font-bold uppercase tracking-widest hover:bg-yellow hover:text-ink transition-all duration-100 cursor-pointer shrink-0 disabled:opacity-50"
+              type="button"
+              onClick={() => setProfanity((p) => !p)}
+              className={`self-start flex items-center gap-3 border-2 border-ink px-3 py-1.5 cursor-pointer transition-colors duration-100 ${profanity ? "bg-ink text-primary-foreground" : "bg-cream text-ink"}`}
             >
-              {loading ? "Destroying..." : "Destroy It"}
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {profanity ? "Profanity On" : "Clean Mode"}
+              </span>
+              <span className={`relative w-8 h-4 border-2 border-current flex items-center transition-colors ${profanity ? "bg-yellow" : "bg-muted"}`}>
+                <span className={`absolute w-2.5 h-2.5 bg-ink transition-all duration-150 ${profanity ? "left-3.5" : "left-px"}`} />
+              </span>
             </button>
           </div>
 
