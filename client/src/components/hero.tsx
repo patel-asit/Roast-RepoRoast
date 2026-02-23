@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Facehash } from "facehash"
-import CountUp from "./CountUp"
+import CountUp from "./ui/CountUp"
 import { fetchRepoSummary, type RepoSummary } from "@/lib/github"
 
 export function HeroSection() {
@@ -23,7 +23,10 @@ export function HeroSection() {
     "jank-master",
   ]
 
-  const FACEHASH_COLORS = ["#fff0a0", "#ffb4f0", "#78a0f0", "#dc5000", "#14c878"]
+  const AVATAR_BG_COLORS = [
+    "bg-mint", "bg-hotpink", "bg-gold", "bg-lavender",
+    "bg-rosecoral", "bg-skyblue", "bg-peachglow", "bg-mint", "bg-hotpink",
+  ]
 
   const handleDestroyClick = async () => {
     setLoading(true)
@@ -69,12 +72,16 @@ export function HeroSection() {
           <div className="mt-8 flex items-center gap-3">
             <div className="flex space-x-1">
               {AVATAR_NAMES.map((name, i) => (
-                <div key={i} className="border-2 border-ink overflow-hidden transition-transform duration-500 ease-out hover:-translate-y-1 cursor-pointer">
+                <div
+                  key={i}
+                  className={`${AVATAR_BG_COLORS[i % AVATAR_BG_COLORS.length]} border-2 border-ink overflow-hidden transition-transform duration-500 ease-out hover:-translate-y-1 cursor-pointer shadow-none hover:shadow-[0_14px_16px_-10px_rgba(17,17,17,0.75)]`}
+                >
                   <Facehash name={name} size={24} />
                 </div>
               ))}
             </div>
             <span className="text-sm font-bold uppercase tracking-widest text-ink">
+              +
               <CountUp
                 from={0}
                 to={5689}

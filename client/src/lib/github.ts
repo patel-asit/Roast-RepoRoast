@@ -3,7 +3,7 @@
 // Client-side GitHub API calls (uses user's IP, no auth needed for public repos)
 
 import { grabFileTreeAndImportantFileContents, type FileContent } from "./filetree";
-import { ghFetch, type GitHubFetchError } from "./gh-fetch";
+import { githubFetch, type GitHubFetchError } from "./gh-fetch";
 
 export type { GitHubFetchError };
 
@@ -26,7 +26,7 @@ export interface RepoSummary {
   file_contents: FileContent[];
 }
 
-// This function extracts the owner and repo name from various GitHub URL formats
+// extracts the owner and repo name from various GitHub URL formats
 export function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
   const cleaned = input.trim().replace(/\.git$/, "");
   const match = cleaned.match(/github\.com\/([^\/]+)\/([^\/\s?#]+)/);
@@ -34,8 +34,8 @@ export function parseGitHubUrl(input: string): { owner: string; repo: string } |
   return { owner: match[1], repo: match[2] };
 }
 
-// --- Main Function ---
 
+// Main function to fetch all repo data
 export async function fetchRepoSummary(
   githubUrl: string
 ): Promise<RepoSummary | GitHubFetchError> {
@@ -50,11 +50,11 @@ export async function fetchRepoSummary(
   try {
     const [repoData, languageData, contributors, commits, readmeData] =
       await Promise.allSettled([
-        ghFetch<any>(base),
-        ghFetch<Record<string, number>>(`${base}/languages`),
-        ghFetch<any[]>(`${base}/contributors?per_page=10&anon=true`),
-        ghFetch<any[]>(`${base}/commits?per_page=10`),
-        ghFetch<any>(`${base}/readme`),
+        githubFetch<any>(base),
+        githubFetch<Record<string, number>>(`${base}/languages`),
+        githubFetch<any[]>(`${base}/contributors?per_page=10&anon=true`),
+        githubFetch<any[]>(`${base}/commits?per_page=10`),
+        githubFetch<any>(`${base}/readme`),
       ]);
 
     if (repoData.status === "rejected") throw repoData.reason;

@@ -1,10 +1,13 @@
- export interface GitHubFetchError {
+// The githubFetch function is a simple wrapper around the Fetch API to call GitHub's REST API. 
+// It handles errors and returns JSON data.
+
+export interface GitHubFetchError {
   error: true;
   status: number;
   message: string;
 }
 
-export async function ghFetch<T>(path: string): Promise<T> {
+export async function githubFetch<T>(path: string): Promise<T> {
   const res = await fetch(`https://api.github.com${path}`, {
     headers: { Accept: "application/vnd.github+json" },
   });
