@@ -1,6 +1,7 @@
 import { Navbar } from "../components/navbar";
 import { Footer } from "../components/footer";
 import { HeroSection } from "../components/hero";
+import { RecentlyDestroyed } from "@/components/recently-destroyed";
 
 export default function Home() {
   return (
@@ -8,6 +9,7 @@ export default function Home() {
       <main className="flex-grow">
         <Navbar />
         <HeroSection />
+        <RecentlyDestroyed />
       </main>
       <Footer />
     </div>
