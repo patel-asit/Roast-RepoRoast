@@ -17,6 +17,7 @@ export interface RepoSummary {
   open_issues: number;
   contributor_count: number;
   created_at: string;
+  current_date: string;
   last_pushed_at: string;
   license_name: string | null;
   readme: string | null;
@@ -115,6 +116,7 @@ export async function fetchRepoSummary(
       contributor_count:
         contributors.status === "fulfilled" ? contributors.value.length : 0,
       created_at: r.created_at,
+      current_date: new Date().toISOString(),
       last_pushed_at: r.pushed_at,
       license_name: r.license?.name ?? null,
       readme,
