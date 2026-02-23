@@ -35,6 +35,29 @@ export function parseGitHubUrl(input: string): { owner: string; repo: string } |
 }
 
 
+export interface RoastResult {
+  roast: string;
+  verdict: string;
+}
+
+export async function fetchRoast(
+  repoSummary: RepoSummary,
+  profanity: boolean
+): Promise<RoastResult | GitHubFetchError> {
+  const serverUrl = "http://localhost:5000";
+  try {
+    const res = await fetch(`${serverUrl}/roast`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repo_summary: repoSummary, profanity }),
+    });
+    if (!res.ok) throw new Error(`Roast server error: ${res.status}`);
+    return res.json() as Promise<RoastResult>;
+  } catch (err: any) {
+    return { error: true, status: 500, message: err?.message ?? "Failed to fetch roast." };
+  }
+}
+
 // Main function to fetch all repo data
 export async function fetchRepoSummary(
   githubUrl: string

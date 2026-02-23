@@ -1,12 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { fetchRepoSummary, type RepoSummary } from "@/lib/github"
+import { fetchRepoSummary, fetchRoast, type RoastResult } from "@/lib/github"
 import { AvatarStrip } from "./avatar-strip"
 
 export function HeroSection() {
   const [url, setUrl] = useState("")
-  const [result, setResult] = useState<RepoSummary | null>(null)
+  const [result, setResult] = useState<RoastResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [profanity, setProfanity] = useState(true)
@@ -15,12 +15,18 @@ export function HeroSection() {
     setLoading(true)
     setError(null)
     setResult(null)
-    const res = await fetchRepoSummary(url)
+    const summary = await fetchRepoSummary(url)
+    if ("error" in summary) {
+      setLoading(false)
+      setError(summary.message)
+      return
+    }
+    const roast = await fetchRoast(summary, profanity)
     setLoading(false)
-    if ("error" in res) {
-      setError(res.message)
+    if ("error" in roast) {
+      setError(roast.message)
     } else {
-      setResult(res)
+      setResult(roast)
     }
   }
 
@@ -78,11 +84,13 @@ export function HeroSection() {
       )}
 
       {result && (
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-6 my-4 max-w-5xl mx-auto">
-          <h2 className="text-xl font-bold mb-4">{result.name}</h2>
-          <pre className="bg-white p-4 rounded border border-blue-200 overflow-auto text-xs">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+        <div className="bg-cream border-t-2 border-b-2 border-ink py-10 px-4 sm:px-6 my-0">
+          <div className="max-w-5xl mx-auto flex flex-col gap-4">
+            <p className="text-sm text-ink leading-relaxed whitespace-pre-wrap">{result.roast}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-t-2 border-ink/20 pt-4">
+              Verdict: {result.verdict}
+            </p>
+          </div>
         </div>
       )}
     </>
