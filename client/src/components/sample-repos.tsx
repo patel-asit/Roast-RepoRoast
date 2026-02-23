@@ -1,7 +1,7 @@
 const ROW_ONE = [
-  { label: "facebook/react", url: "https://github.com/facebook/react", cls: "-rotate-2" },
+  { label: "vercel/next.js", url: "https://github.com/vercel/next.js", cls: "-rotate-2" },
   { label: "torvalds/linux", url: "https://github.com/torvalds/linux", cls: "rotate-[1.5deg]" },
-  { label: "microsoft/vscode", url: "https://github.com/microsoft/vscode", cls: "-rotate-1" },
+  { label: "openclaw/openclaw", url: "https://github.com/openclaw/openclaw", cls: "-rotate-1" },
 ]
 
 const ROW_TWO = [

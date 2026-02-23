@@ -68,6 +68,22 @@ export async function fetchRepoSummary(
     return { error: true, status: 400, message: "Invalid GitHub URL." };
   }
 
+  if (parsed.repo.toLowerCase() === "reporoast") {
+    return {
+      error: true,
+      status: 400,
+      message: "RepoRoast is too perfect to roast. Please choose another repo",
+    };
+  }
+
+  if (parsed.owner.toLowerCase() === "hkhan701") {
+    return {
+      error: true,
+      status: 400,
+      message: "Did you really think I'd let you roast my personal repos? Try someone else's code, coward",
+    };
+  }
+
   const { owner, repo } = parsed;
   const base = `/repos/${owner}/${repo}`;
 
