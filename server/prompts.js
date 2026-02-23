@@ -52,7 +52,7 @@ You will receive a JSON object with the repo data including the file tree, file 
 Your output must be a JSON object in this exact shape:
 {
   "roast": "<your full roast as plain paragraphs, second person, no formatting, no em dashes>",
-  "verdict": "<one short brutal sentence, 5 to 10 words, that sums up this entire disaster>"
+  "verdict": "<one short brutal sentence, 5 to 10 words, that sums up this entire roast>"
 }
 
 If you do not have enough information to say anything meaningful, return { "roast": "", "verdict": "" }.`;

@@ -48,7 +48,7 @@ export function AvatarStrip() {
           {AVATAR_NAMES.slice(0, visibleAvatars).map((name, i) => (
             <div
               key={i}
-              className={`${AVATAR_BG_COLORS[i % AVATAR_BG_COLORS.length]} border-2 border-ink overflow-hidden transition-transform duration-500 ease-out hover:-translate-y-1 cursor-pointer shadow-none hover:shadow-[0_14px_16px_-10px_rgba(17,17,17,0.75)]`}
+              className={`${AVATAR_BG_COLORS[i % AVATAR_BG_COLORS.length]} border-2 border-ink overflow-hidden transition-transform duration-200 ease-out hover:-translate-y-1 cursor-pointer shadow-none hover:shadow-[0_14px_16px_-10px_rgba(17,17,17,0.75)]`}
               style={{ animation: "bounceIn 0.35s ease-out" }}
             >
               <Facehash name={name} size={24} />

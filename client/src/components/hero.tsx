@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { fetchRepoSummary, fetchRoast, parseGitHubUrl, type RepoSummary, type RoastResult } from "@/lib/github"
 import { AvatarStrip } from "./avatar-strip"
+import { SampleRepos } from "./sample-repos"
 import { toast } from "@/components/ui/toaster"
 
 export function HeroSection() {
@@ -133,6 +134,7 @@ export function HeroSection() {
           </div>
 
           <AvatarStrip />
+          <SampleRepos onSelect={setUrl} />
         </div>
       </section>
 
