@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react";
-import { Skull, Github } from "lucide-react"
+import { Skull } from "lucide-react"
+import { GithubIcon } from "./ui/github";
 
 export function Footer() {
   const skullRef = useRef<SVGSVGElement | null>(null)
@@ -185,7 +186,7 @@ export function Footer() {
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
           >
-            <Github className="w-4 h-4" />
+            <GithubIcon />
             made by Hassan
           </a>
         </div>
