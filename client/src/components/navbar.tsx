@@ -33,7 +33,7 @@ export function Navbar() {
             <Skull ref={skullRef} className="w-5 h-5 text-ink" />
           </button>
           <span className="text-sm font-bold uppercase tracking-widest text-primary-foreground">
-            Destroy My Repo
+            Roast My Repo
           </span>
         </div>
       </div>

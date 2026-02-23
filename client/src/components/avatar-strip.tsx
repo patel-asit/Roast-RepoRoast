@@ -64,7 +64,7 @@ export function AvatarStrip() {
             direction="up"
             duration={1}
             className="count-up-text"
-          /> repos destroyed
+          /> repos roasted
         </span>
       </div>
     </>
