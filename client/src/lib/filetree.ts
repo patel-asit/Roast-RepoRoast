@@ -95,7 +95,7 @@ async function fetchFileTree(
 async function pickImportantFiles(
   filteredPaths: string[]
 ): Promise<MistralFileSelection> {
-  const serverUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+  const serverUrl = process.env.REPO_ROAST_SERVER_URL ?? "http://localhost:5000";
 
   const res = await fetch(`${serverUrl}/pick-files`, {
     method: "POST",
