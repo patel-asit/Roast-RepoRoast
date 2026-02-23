@@ -21,7 +21,7 @@ export function Navbar() {
   }
 
   return (
-    <nav className="bg-ink text-primary-foreground py-3 px-6">
+    <nav className="bg-ink text-primary-foreground py-3 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button

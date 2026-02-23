@@ -137,8 +137,8 @@ function MarqueeRow({
 
 export function RecentlyDestroyed() {
   return (
-    <section className="py-20 md:py-24 bg-cream overflow-hidden">
-      <div className="max-w-5xl mx-auto px-6 mb-10">
+    <section className="py-14 sm:py-20 md:py-24 bg-cream overflow-hidden">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 mb-8 sm:mb-10">
         <h2 className="text-sm md:text-base font-bold uppercase tracking-widest text-muted-foreground text-center">
           Recently Destroyed
         </h2>

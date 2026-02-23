@@ -154,7 +154,7 @@ export function Footer() {
   }, [isAnimating]);
 
   return (
-    <footer ref={footerRef} className="relative overflow-hidden bg-ink text-primary-foreground py-12 px-6">
+    <footer ref={footerRef} className="relative overflow-hidden bg-ink text-primary-foreground py-10 sm:py-12 px-4 sm:px-6">
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"

@@ -43,7 +43,7 @@ export function AvatarStrip() {
           100% { transform: translateY(0); }
         }
       `}</style>
-      <div className="mt-8 flex items-center gap-3">
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
         <div className="flex space-x-1">
           {AVATAR_NAMES.slice(0, visibleAvatars).map((name, i) => (
             <div
