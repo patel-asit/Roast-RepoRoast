@@ -1,30 +1,89 @@
 "use client"
 
-import { useState } from "react"
-import { fetchRepoSummary, fetchRoast, type RoastResult } from "@/lib/github"
+import { useState, useEffect, useRef } from "react"
+import { fetchRepoSummary, fetchRoast, parseGitHubUrl, type RepoSummary, type RoastResult } from "@/lib/github"
 import { AvatarStrip } from "./avatar-strip"
+import { toast } from "@/components/ui/toaster"
 
 export function HeroSection() {
   const [url, setUrl] = useState("")
   const [result, setResult] = useState<RoastResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [roasting, setRoasting] = useState(false)
   const [profanity, setProfanity] = useState(true)
 
-  const handleDestroyClick = async () => {
-    setLoading(true)
-    setError(null)
-    setResult(null)
-    const summary = await fetchRepoSummary(url)
-    if ("error" in summary) {
-      setLoading(false)
-      setError(summary.message)
+  // Background pre-fetch state
+  const summaryRef = useRef<RepoSummary | null>(null)
+  const summaryPromiseRef = useRef<Promise<RepoSummary | { error: true; status: number; message: string }> | null>(null)
+  const currentUrlRef = useRef<string>("")
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Silently pre-fetch repo summary whenever a valid GitHub URL is entered
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    const parsed = parseGitHubUrl(url)
+    if (!parsed) {
+      summaryRef.current = null
+      summaryPromiseRef.current = null
+      currentUrlRef.current = ""
       return
     }
-    const roast = await fetchRoast(summary, profanity)
-    setLoading(false)
+
+    // URL changed — invalidate cached summary
+    summaryRef.current = null
+    summaryPromiseRef.current = null
+    currentUrlRef.current = url
+
+    debounceRef.current = setTimeout(() => {
+      const capturedUrl = url
+      const promise = fetchRepoSummary(capturedUrl)
+      summaryPromiseRef.current = promise
+
+      promise.then((res) => {
+        // Discard if the URL changed by the time this resolves
+        if (currentUrlRef.current !== capturedUrl) return
+        if (!("error" in res)) {
+          summaryRef.current = res
+        }
+      })
+    }, 600)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [url])
+
+  const handleDestroyClick = async () => {
+    setRoasting(true)
+    setResult(null)
+    currentUrlRef.current = url
+
+    let resolvedSummary = summaryRef.current
+
+    if (!resolvedSummary) {
+      // Cancel any pending debounce and ensure we have a promise to await
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+        debounceRef.current = null
+      }
+
+      const promise = summaryPromiseRef.current ?? fetchRepoSummary(url)
+      summaryPromiseRef.current = promise
+
+      const res = await promise
+      if ("error" in res) {
+        setRoasting(false)
+        toast.error(res.message)
+        return
+      }
+      resolvedSummary = res
+      summaryRef.current = res
+    }
+
+    const roast = await fetchRoast(resolvedSummary, profanity)
+    setRoasting(false)
     if ("error" in roast) {
-      setError(roast.message)
+      toast.error(roast.message)
     } else {
       setResult(roast)
     }
@@ -35,7 +94,7 @@ export function HeroSection() {
       <section className="bg-cream py-14 px-4 sm:py-20 sm:px-6 md:py-24">
         <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold uppercase tracking-widest text-ink text-balance">
-            Destroy My Repo
+            Roast My Repo
           </h1>
           <p className="mt-4 sm:mt-6 text-sm text-muted-foreground max-w-xl text-pretty">
             {"Drop your repo URL. We'll find every bullshit thing you put in your code."}
@@ -52,10 +111,10 @@ export function HeroSection() {
               />
               <button
                 onClick={handleDestroyClick}
-                disabled={loading}
+                disabled={roasting}
                 className="border-2 border-ink border-l-0 bg-ink text-primary-foreground px-4 sm:px-6 md:px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-widest hover:bg-yellow hover:text-ink transition-all duration-100 cursor-pointer shrink-0 disabled:opacity-50"
               >
-                {loading ? "Destroying..." : "Destroy It"}
+                {roasting ? "Destroying..." : "Destroy It"}
               </button>
             </div>
 
@@ -76,12 +135,6 @@ export function HeroSection() {
           <AvatarStrip />
         </div>
       </section>
-
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4 max-w-5xl mx-auto">
-          <p className="text-red-700">{error}</p>
-        </div>
-      )}
 
       {result && (
         <div className="bg-cream border-t-2 border-b-2 border-ink py-10 px-4 sm:px-6 my-0">

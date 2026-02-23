@@ -178,7 +178,7 @@ export function Footer() {
         </div>
         <div className="mt-8 pt-6 border-t-2 border-primary-foreground/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="text-sm text-primary-foreground/60">
-            {"No feelings are considered."}
+            {"no feelings are considered."}
           </p>
           <a
             href="https://github.com/hkhan701"
@@ -187,7 +187,7 @@ export function Footer() {
             className="flex items-center gap-2 text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
           >
             <GithubIcon />
-            made by Hassan
+            made by hassan
           </a>
         </div>
       </div>
