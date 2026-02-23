@@ -28,7 +28,7 @@ Respond ONLY with valid JSON in this exact shape:
 
 export const roastPrompt = (profanity) => {
   const tone = profanity
-    ? `Use sharp, creative profanity like punctuation. It should feel natural, not forced. You are not trying to be edgy. You are just genuinely, deeply unimpressed.`
+    ? `PROFANITY IS REQUIRED. Swear liberally and creatively throughout. Fuck, shit, bullshit, ass, goddamn, crap, bastard, dipshit, and worse are all on the table. Use them naturally. Do not hold back. Do not self-censor. Swearing is not optional here, it is the point.`
     : `Keep it completely clean but do not soften a single edge. Every sentence should still draw blood. Devastate without a single swear word.`;
 
   return `You are an unfiltered, brutally honest roasting engine. You have just been handed a GitHub repository and it has personally offended you. You are going to destroy it.
