@@ -2,6 +2,11 @@
 // src/utils/github.ts
 // Client-side GitHub API calls (uses user's IP, no auth needed for public repos)
 
+import { grabFileTreeAndImportantFileContents, type FileContent } from "./filetree";
+import { ghFetch, type GitHubFetchError } from "./gh-fetch";
+
+export type { GitHubFetchError };
+
 export interface RepoSummary {
   name: string;
   owner: string;
@@ -17,12 +22,8 @@ export interface RepoSummary {
   readme: string | null;
   recent_commit_messages: string[];
   is_archived: boolean;
-}
-
-export interface GitHubFetchError {
-  error: true;
-  status: number;
-  message: string;
+  file_tree: string[];
+  file_contents: FileContent[];
 }
 
 // This function extracts the owner and repo name from various GitHub URL formats
@@ -31,29 +32,6 @@ export function parseGitHubUrl(input: string): { owner: string; repo: string } |
   const match = cleaned.match(/github\.com\/([^\/]+)\/([^\/\s?#]+)/);
   if (!match) return null;
   return { owner: match[1], repo: match[2] };
-}
-
-// This function performs a fetch to the GitHub API and handles errors
-async function ghFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`https://api.github.com${path}`, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
-
-  if (!res.ok) {
-    const err: GitHubFetchError = {
-      error: true,
-      status: res.status,
-      message:
-        res.status === 404
-          ? "Repository not found or is private."
-          : res.status === 403
-          ? "GitHub API rate limit hit. Try again in a minute."
-          : `GitHub API error: ${res.status}`,
-    };
-    throw err;
-  }
-
-  return res.json();
 }
 
 // --- Main Function ---
@@ -98,6 +76,8 @@ export async function fetchRepoSummary(
       }
     }
 
+    const filetree = await grabFileTreeAndImportantFileContents(owner, repo, r.default_branch);
+
     return {
       name: r.name,
       owner: r.owner?.login ?? owner,
@@ -120,6 +100,8 @@ export async function fetchRepoSummary(
           ? commits.value.map((c: any) => c.commit?.message?.split("\n")[0] ?? "").filter(Boolean)
           : [],
       is_archived: r.archived ?? false,
+      file_tree: filetree.raw_tree,
+      file_contents: filetree.files,
     };
   } catch (err: any) {
     if (err?.error) return err as GitHubFetchError;
