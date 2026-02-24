@@ -1,12 +1,12 @@
 const ROW_ONE = [
-  { label: "vercel/next.js", url: "https://github.com/vercel/next.js", cls: "-rotate-2" },
-  { label: "torvalds/linux", url: "https://github.com/torvalds/linux", cls: "rotate-[1.5deg]" },
-  { label: "openclaw/openclaw", url: "https://github.com/openclaw/openclaw", cls: "-rotate-1" },
+  { label: "vercel/next.js", url: "github.com/vercel/next.js", cls: "-rotate-2" },
+  { label: "torvalds/linux", url: "github.com/torvalds/linux", cls: "rotate-[1.5deg]" },
+  { label: "openclaw/openclaw", url: "github.com/openclaw/openclaw", cls: "-rotate-1" },
 ]
 
 const ROW_TWO = [
-  { label: "kelseyhightower/nocode", url: "https://github.com/kelseyhightower/nocode", cls: "rotate-2" },
-  { label: "hkhan701/reporoast", url: "https://github.com/hkhan701/RepoRoast", cls: "-rotate-[1.5deg]" },
+  { label: "kelseyhightower/nocode", url: "github.com/kelseyhightower/nocode", cls: "rotate-2" },
+  { label: "hkhan701/reporoast", url: "github.com/hkhan701/RepoRoast", cls: "-rotate-[1.5deg]" },
 ]
 
 export function SampleRepos({ onSelect }: { onSelect: (url: string) => void }) {
