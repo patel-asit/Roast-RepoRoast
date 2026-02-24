@@ -77,7 +77,8 @@ function RepoCard({ repo, index }: { repo: RoastedRepo; index: number }) {
     >
       <div className="flex items-center gap-3">
         <div className={cn("w-7 h-7 sm:w-9 sm:h-9 border-2 border-ink shrink-0 overflow-hidden", AVATAR_BG_COLORS[index % AVATAR_BG_COLORS.length])}>
-          <Facehash name={repo.domain} size={36} />
+          <span className="sm:hidden"><Facehash name={repo.domain} size={28} /></span>
+          <span className="hidden sm:block"><Facehash name={repo.domain} size={36} /></span>
         </div>
         <span className="text-xs font-bold uppercase tracking-widest text-card-foreground truncate">
           {repo.domain}
