@@ -101,8 +101,8 @@ export function HeroSection() {
     setRoastedUrl("")
   }
 
-  // Loading state — replace entire hero with a centered spinner
-  if (!roasting) return <RoastingLoadingState />
+  // Loading state
+  if (roasting) return <RoastingLoadingState />
 
   // reader mode type view
   if (result) {

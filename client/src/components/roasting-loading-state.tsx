@@ -22,14 +22,24 @@ const BOX_W = 200
 const BOX_H = 160
 const SKULL_SIZE = 36
 
+// Spring params for the box shake
+const STIFFNESS = 0.28
+const DAMPING   = 0.72
+const IMPULSE   = 7
+
 export function RoastingLoadingState() {
   const skullWrapperRef = useRef<HTMLDivElement | null>(null)
+  const boxRef          = useRef<HTMLDivElement | null>(null)
+
   const posRef = useRef({
     x: Math.random() * (BOX_W - SKULL_SIZE),
     y: Math.random() * (BOX_H - SKULL_SIZE),
     dx: 1.6,
     dy: 1.3,
   })
+  // Spring state for the box
+  const springRef = useRef({ x: 0, y: 0, vx: 0, vy: 0 })
+
   const rafRef = useRef<number | null>(null)
 
   const [tagline, setTagline] = useState(
@@ -53,25 +63,49 @@ export function RoastingLoadingState() {
     return () => clearInterval(interval)
   }, [])
 
-  // DVD-style bounce
+  // DVD-style bounce + box spring shake
   useEffect(() => {
-    const el = skullWrapperRef.current
-    if (!el) return
+    const skull = skullWrapperRef.current
+    const box   = boxRef.current
+    if (!skull || !box) return
 
     const maxX = BOX_W - SKULL_SIZE
     const maxY = BOX_H - SKULL_SIZE
 
     const tick = () => {
       const p = posRef.current
+      const s = springRef.current
+
       p.x += p.dx
       p.y += p.dy
 
-      if (p.x <= 0)    { p.x = 0;    p.dx =  Math.abs(p.dx) }
-      if (p.x >= maxX) { p.x = maxX; p.dx = -Math.abs(p.dx) }
-      if (p.y <= 0)    { p.y = 0;    p.dy =  Math.abs(p.dy) }
-      if (p.y >= maxY) { p.y = maxY; p.dy = -Math.abs(p.dy) }
+      // Detect wall hits and inject impulse into the spring
+      if (p.x <= 0) {
+        p.x = 0; p.dx = Math.abs(p.dx)
+        s.vx += IMPULSE  // box jolts right (away from left wall)
+      }
+      if (p.x >= maxX) {
+        p.x = maxX; p.dx = -Math.abs(p.dx)
+        s.vx -= IMPULSE  // box jolts left
+      }
+      if (p.y <= 0) {
+        p.y = 0; p.dy = Math.abs(p.dy)
+        s.vy += IMPULSE  // box jolts down
+      }
+      if (p.y >= maxY) {
+        p.y = maxY; p.dy = -Math.abs(p.dy)
+        s.vy -= IMPULSE  // box jolts up
+      }
 
-      el.style.transform = `translate(${p.x}px, ${p.y}px)`
+      // Integrate damped spring: F = -k*x, friction = damping
+      s.vx = (s.vx - STIFFNESS * s.x) * DAMPING
+      s.vy = (s.vy - STIFFNESS * s.y) * DAMPING
+      s.x += s.vx
+      s.y += s.vy
+
+      skull.style.transform = `translate(${p.x}px, ${p.y}px)`
+      box.style.transform   = `translate(${s.x}px, ${s.y}px)`
+
       rafRef.current = requestAnimationFrame(tick)
     }
 
@@ -83,6 +117,7 @@ export function RoastingLoadingState() {
     <section className="bg-cream min-h-[60vh] flex flex-col items-center justify-center px-4">
       <div className="flex flex-col items-center gap-6">
         <div
+          ref={boxRef}
           className="relative border-2 border-ink bg-yellow overflow-hidden"
           style={{ width: BOX_W, height: BOX_H, boxShadow: "4px 4px 0px #111111" }}
         >
