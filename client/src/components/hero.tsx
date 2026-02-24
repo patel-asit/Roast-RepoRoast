@@ -8,6 +8,7 @@ import { toast } from "@/components/ui/toaster"
 import { ExternalLink, Share2 } from "lucide-react"
 import { ArrowLeftIcon } from "./ui/arrow-left"
 import { RoastingLoadingState } from "./roasting-loading-state"
+import TextType from "./TextType"
 
 export function HeroSection() {
   const [url, setUrl] = useState("")
@@ -125,7 +126,7 @@ export function HeroSection() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 border-2 border-ink bg-cream text-ink px-3 py-1.5 text-xs font-mono hover:bg-ink hover:text-primary-foreground transition-colors duration-100"
               >
-                {new URL(roastedUrl).pathname.split("/").filter(Boolean)[1]}
+                {/* {new URL(roastedUrl).pathname.split("/").filter(Boolean)[1]} */}
                 <ExternalLink size={15} />
               </a>
 
@@ -143,7 +144,20 @@ export function HeroSection() {
 
           {/* Roast content */}
           <div className="flex flex-col gap-6">
-            <p className="text-sm text-ink leading-7 whitespace-pre-wrap">{result.roast}</p>
+            <div className="text-sm text-ink leading-7 whitespace-pre-wrap">
+
+              <TextType 
+                text={result.roast}
+                typingSpeed={10}
+                pauseDuration={0}
+                showCursor
+                loop={false}
+                cursorCharacter="_"
+                cursorBlinkDuration={0.5}
+              />
+              {/* {result.roast} */}
+              
+            </div>
             <div className="border-t-2 border-ink/20 pt-5">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Verdict: {result.verdict}
