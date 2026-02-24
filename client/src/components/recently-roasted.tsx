@@ -71,29 +71,34 @@ const AVATAR_BG_COLORS = [
 function RepoCard({ repo, index }: { repo: RoastedRepo; index: number }) {
   return (
     <div
-      className={cn(
-        "relative border-2 border-ink bg-card p-3 sm:p-5 shadow-offset min-w-52 max-w-52 sm:min-w-75 sm:max-w-75 shrink-0 select-none"
-      )}
+      className="bg-ink min-w-52 max-w-52 sm:min-w-75 sm:max-w-75 h-32 shrink-0 select-none cursor-pointer"
+      style={{ animation: "scale-up-center 1s cubic-bezier(0.4, 0, 0.2, 1) both" }}
     >
-      <div className="flex items-center gap-3">
-        <div className={cn("w-7 h-7 sm:w-9 sm:h-9 border-2 border-ink shrink-0 overflow-hidden", AVATAR_BG_COLORS[index % AVATAR_BG_COLORS.length])}>
-          <span className="sm:hidden"><Facehash name={repo.domain} size={28} /></span>
-          <span className="hidden sm:block"><Facehash name={repo.domain} size={36} /></span>
+      <div
+        className={cn(
+          "h-full border-2 border-ink bg-card p-3 sm:p-5 -translate-x-1 -translate-y-1 hover:-translate-x-1.5 hover:-translate-y-1.5 active:translate-x-0 active:translate-y-0 duration-200"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className={cn("w-7 h-7 sm:w-9 sm:h-9 border-2 border-ink shrink-0 overflow-hidden", AVATAR_BG_COLORS[index % AVATAR_BG_COLORS.length])}>
+            <span className="sm:hidden"><Facehash name={repo.domain} size={28} /></span>
+            <span className="hidden sm:block"><Facehash name={repo.domain} size={36} /></span>
+          </div>
+          <span className="text-xs font-bold uppercase tracking-widest text-card-foreground truncate">
+            {repo.domain}
+          </span>
         </div>
-        <span className="text-xs font-bold uppercase tracking-widest text-card-foreground truncate">
-          {repo.domain}
-        </span>
+        <p className="mt-2 text-xs text-muted-foreground leading-relaxed line-clamp-3">
+          {repo.roast}
+        </p>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-        {repo.roast}
-      </p>
     </div>
   )
 }
 
 export function RecentlyRoasted() {
   return (
-    <section className="py-14 sm:py-20 md:py-24 bg-cream overflow-hidden">
+    <section className="pt-6 pb-14 sm:pt-8 sm:pb-20 md:pt-10 md:pb-24 bg-cream overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 mb-8 sm:mb-10">
         <h2 className="text-sm md:text-base font-bold uppercase tracking-widest text-muted-foreground text-center">
           Recently Roasted

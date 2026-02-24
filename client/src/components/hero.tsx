@@ -92,7 +92,7 @@ export function HeroSection() {
 
   return (
     <>
-      <section className="bg-cream py-14 px-4 sm:py-20 sm:px-6 md:py-24">
+      <section className="bg-cream pt-14 pb-6 px-4 sm:pt-20 sm:pb-8 sm:px-6 md:pt-24 md:pb-10">
         <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold uppercase tracking-widest text-ink text-balance">
             Roast My Repo
