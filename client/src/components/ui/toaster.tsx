@@ -11,7 +11,7 @@ export function Toaster() {
         unstyled: true,
         classNames: {
           toast:
-            "w-full flex items-start gap-3 border-2 border-ink bg-cream text-ink px-4 py-3 shadow-[4px_4px_0px_#111111] font-mono text-xs",
+            "w-full flex items-center gap-3 border-2 border-ink bg-cream text-ink px-4 py-3 shadow-[4px_4px_0px_#111111] font-mono text-xs",
           title: "font-bold uppercase tracking-widest text-xs",
           description: "text-xs font-normal tracking-normal mt-0.5 opacity-80",
           closeButton:
@@ -38,7 +38,7 @@ function base(type: "success" | "error" | "warning" | "default") {
   return {
     unstyled: true,
     classNames: {
-      toast: `w-full flex items-start gap-3 border-2 border-ink bg-cream text-ink px-4 py-3 shadow-[4px_4px_0px_#111111] font-mono text-xs ${accent[type]}`,
+      toast: `w-full flex items-center gap-3 border-2 border-ink bg-cream text-ink px-4 py-3 shadow-[4px_4px_0px_#111111] font-mono text-xs ${accent[type]}`,
       title: "font-bold uppercase tracking-widest text-xs",
       description: "text-xs font-normal tracking-normal mt-0.5 opacity-80",
     },

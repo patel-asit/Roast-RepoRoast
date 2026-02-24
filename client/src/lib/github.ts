@@ -45,7 +45,7 @@ export async function fetchRoast(
   repoSummary: RepoSummary,
   profanity: boolean
 ): Promise<RoastResult | GitHubFetchError> {
-  const serverUrl = "http://localhost:5000";
+  const serverUrl = process.env.NEXT_PUBLIC_REPO_ROAST_SERVER_URL ?? "http://localhost:5000";
   try {
     const res = await fetch(`${serverUrl}/roast`, {
       method: "POST",

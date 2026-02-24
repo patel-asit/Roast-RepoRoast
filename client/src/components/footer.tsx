@@ -26,7 +26,7 @@ export function Footer() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gridRef = useRef<number[][] | null>(null);
   const animationRef = useRef<number | null>(null);
-  const [isAnimating, setIsAnimating] = useState(true);
+  const [isAnimating] = useState(true);
 
   useEffect(() => {
     const canvas = canvasRef.current;
