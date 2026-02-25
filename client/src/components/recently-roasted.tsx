@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Facehash } from "facehash"
 import { cn } from "@/lib/utils"
 import { Marquee } from "@/components/ui/marquee"
+import { parseGitHubUrl } from "@/lib/github"
 
 interface RoastedRepo {
   domain: string
@@ -35,11 +37,12 @@ function getRandomColor(colors: string[]) {
   return color
 }
 
-function RepoCard({ repo }: { repo: RoastedRepo; index: number }) {
+function RepoCard({ repo, onClick }: { repo: RoastedRepo; index: number; onClick: () => void }) {
   const [color] = useState(() => getRandomColor(AVATAR_BG_COLORS))
 
   return (
     <div
+      onClick={onClick}
       className="bg-ink min-w-52 max-w-52 sm:min-w-75 sm:max-w-75 h-32 shrink-0 select-none cursor-pointer"
       style={{
         animation:
@@ -97,9 +100,21 @@ function RepoCardSkeleton() {
 }
 
 export function RecentlyRoasted() {
+  const router = useRouter()
   const [rowOne, setRowOne] = useState<RoastedRepo[]>([])
   const [rowTwo, setRowTwo] = useState<RoastedRepo[]>([])
   const [loading, setLoading] = useState(true)
+
+  const handleRepoClick = (domain: string) => {
+    const normalized = domain.includes("github.com/")
+      ? domain
+      : `https://github.com/${domain.replace(/^\/+|\/+$/g, "")}`
+
+    const parsed = parseGitHubUrl(normalized)
+    if (!parsed) return
+
+    router.push(`/roast/${encodeURIComponent(parsed.owner)}/${encodeURIComponent(parsed.repo)}`)
+  }
 
   useEffect(() => {
     fetch(`${SERVER_URL}/recent-roasts`)
@@ -157,6 +172,7 @@ export function RecentlyRoasted() {
                   key={repo.domain}
                   repo={repo}
                   index={index}
+                  onClick={() => handleRepoClick(repo.domain)}
                 />
               ))}
             </Marquee>
@@ -171,6 +187,7 @@ export function RecentlyRoasted() {
                   key={repo.domain}
                   repo={repo}
                   index={index}
+                  onClick={() => handleRepoClick(repo.domain)}
                 />
               ))}
             </Marquee>
