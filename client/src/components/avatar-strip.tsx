@@ -21,8 +21,18 @@ const AVATAR_BG_COLORS = [
   "bg-rosecoral", "bg-skyblue", "bg-peachglow", "bg-mint", "bg-hotpink",
 ]
 
+const SERVER_URL = (process.env.NEXT_PUBLIC_REPO_ROAST_SERVER_URL ?? "http://localhost:5000").replace(/\/$/, "")
+
 export function AvatarStrip() {
   const [visibleAvatars, setVisibleAvatars] = useState(0)
+  const [roastCount, setRoastCount] = useState(0)
+
+  useEffect(() => {
+    fetch(`${SERVER_URL}/roast-count`)
+      .then((r) => r.json())
+      .then((data) => setRoastCount(data.count ?? 31415))
+      .catch(() => {/* leave null, will show fallback */ })
+  }, [])
 
   useEffect(() => {
     if (visibleAvatars >= AVATAR_NAMES.length) return
@@ -56,10 +66,9 @@ export function AvatarStrip() {
           ))}
         </div>
         <span className="text-sm font-bold uppercase tracking-widest text-ink">
-          +
-          <CountUp
+          +<CountUp
             from={0}
-            to={5689}
+            to={roastCount}
             separator=","
             direction="up"
             duration={1}

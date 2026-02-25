@@ -1,65 +1,66 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Facehash } from "facehash"
 import { cn } from "@/lib/utils"
 import { Marquee } from "@/components/ui/marquee"
 
 interface RoastedRepo {
   domain: string
-  roast: string
+  verdict: string
 }
 
 const ROW_ONE: RoastedRepo[] = [
   {
     domain: "todo-app-v47",
-    roast: "Forty-seven rewrites and you still can't mark a task done.",
+    verdict: "Forty-seven rewrites and you still can't mark a task done.",
   },
   {
     domain: "my-portfolio-2019",
-    roast: "A graveyard of unfinished projects dressed up with CSS animations.",
+    verdict: "A graveyard of unfinished projects dressed up with CSS animations.",
   },
   {
     domain: "blockchain-water",
-    roast: "You put water on a blockchain. Water. On a blockchain.",
+    verdict: "You put water on a blockchain. Water. On a blockchain.",
   },
   {
     domain: "gpt-wrapper-saas",
-    roast: "You copy-pasted the OpenAI docs and called it a product.",
+    verdict: "You copy-pasted the OpenAI docs and called it a product.",
   },
   {
     domain: "leetcode-solutions",
-    roast: "250 easy problems, zero medium ones. Very telling.",
+    verdict: "250 easy problems, zero medium ones. Very telling.",
   },
   {
     domain: "startup-landing-v3",
-    roast: "Three landing pages, zero users, infinite buzzwords.",
+    verdict: "Three landing pages, zero users, infinite buzzwords.",
   },
 ]
 
 const ROW_TWO: RoastedRepo[] = [
   {
     domain: "nodejs-chat-app",
-    roast: "A Socket.io tutorial with your name slapped on the README.",
+    verdict: "A Socket.io tutorial with your name slapped on the README.",
   },
   {
     domain: "ml-stock-predictor",
-    roast: "Linear regression in a trench coat pretending to be AI.",
+    verdict: "Linear regression in a trench coat pretending to be AI.",
   },
   {
     domain: "awesome-list-list",
-    roast: "A list of lists of lists. You contributed nothing to this world.",
+    verdict: "A list of lists of lists. You contributed nothing to this world.",
   },
   {
     domain: "discord-bot-v2",
-    roast: "Slash commands that don't work and a bot that's offline 24/7.",
+    verdict: "Slash commands that don't work and a bot that's offline 24/7.",
   },
   {
     domain: "crypto-tracker-pro",
-    roast: "Built during the bull run. Last commit: November 2022.",
+    verdict: "Built during the bull run. Last commit: November 2022.",
   },
   {
     domain: "rust-rewrite",
-    roast: "You rewrote your broken JavaScript in Rust. Still broken.",
+    verdict: "You rewrote your broken JavaScript in Rust. Still broken.",
   },
 ]
 
@@ -67,6 +68,8 @@ const AVATAR_BG_COLORS = [
   "bg-mint", "bg-hotpink", "bg-gold", "bg-lavender",
   "bg-rosecoral", "bg-skyblue", "bg-peachglow", "bg-mint", "bg-hotpink",
 ]
+
+const SERVER_URL = (process.env.NEXT_PUBLIC_REPO_ROAST_SERVER_URL ?? "http://localhost:5000").replace(/\/$/, "")
 
 function RepoCard({ repo, index }: { repo: RoastedRepo; index: number }) {
   return (
@@ -89,7 +92,7 @@ function RepoCard({ repo, index }: { repo: RoastedRepo; index: number }) {
           </span>
         </div>
         <p className="mt-2 text-xs text-muted-foreground leading-relaxed line-clamp-3">
-          {repo.roast}
+          {repo.verdict}
         </p>
       </div>
     </div>
@@ -97,6 +100,22 @@ function RepoCard({ repo, index }: { repo: RoastedRepo; index: number }) {
 }
 
 export function RecentlyRoasted() {
+  const [rowOne, setRowOne] = useState<RoastedRepo[]>(ROW_ONE)
+  const [rowTwo, setRowTwo] = useState<RoastedRepo[]>(ROW_TWO)
+
+  useEffect(() => {
+    fetch(`${SERVER_URL}/recent-roasts`)
+      .then((r) => r.json())
+      .then((data: { roasts: RoastedRepo[] }) => {
+        const roasts = data.roasts
+        if (!roasts || roasts.length < 2) return
+        const mid = Math.ceil(roasts.length / 2)
+        setRowOne(roasts.slice(0, mid))
+        setRowTwo(roasts.slice(mid))
+      })
+      .catch(() => { /* keep static fallback */ })
+  }, [])
+
   return (
     <section className="pt-6 pb-14 sm:pt-8 sm:pb-20 md:pt-10 md:pb-24 bg-cream overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 mb-8 sm:mb-10">
@@ -107,12 +126,12 @@ export function RecentlyRoasted() {
 
       <div className="relative flex flex-col gap-5">
         <Marquee pauseOnHover className="[--duration:35s] [--gap:0.75rem] sm:[--gap:1.25rem]">
-          {ROW_ONE.map((repo, index) => (
+          {rowOne.map((repo, index) => (
             <RepoCard key={repo.domain} repo={repo} index={index} />
           ))}
         </Marquee>
         <Marquee reverse pauseOnHover className="[--duration:40s] [--gap:0.75rem] sm:[--gap:1.25rem]">
-          {ROW_TWO.map((repo, index) => (
+          {rowTwo.map((repo, index) => (
             <RepoCard key={repo.domain} repo={repo} index={index} />
           ))}
         </Marquee>
