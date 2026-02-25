@@ -71,7 +71,19 @@ const AVATAR_BG_COLORS = [
 
 const SERVER_URL = (process.env.NEXT_PUBLIC_REPO_ROAST_SERVER_URL ?? "http://localhost:5000").replace(/\/$/, "")
 
-function RepoCard({ repo, index }: { repo: RoastedRepo; index: number }) {
+let lastColor: string | null = null;
+function getRandomColor(colors: string[]) {
+  let filtered = colors;
+  if (lastColor && colors.length > 1) {
+    filtered = colors.filter((c) => c !== lastColor);
+  }
+  const color = filtered[Math.floor(Math.random() * filtered.length)];
+  lastColor = color;
+  return color;
+}
+
+function RepoCard({ repo }: { repo: RoastedRepo; index: number }) {
+  const [color] = useState(() => getRandomColor(AVATAR_BG_COLORS));
   return (
     <div
       className="bg-ink min-w-52 max-w-52 sm:min-w-75 sm:max-w-75 h-32 shrink-0 select-none cursor-pointer"
@@ -83,7 +95,7 @@ function RepoCard({ repo, index }: { repo: RoastedRepo; index: number }) {
         )}
       >
         <div className="flex items-center gap-3">
-          <div className={cn("w-7 h-7 sm:w-9 sm:h-9 border-2 border-ink shrink-0 overflow-hidden", AVATAR_BG_COLORS[index % AVATAR_BG_COLORS.length])}>
+          <div className={cn("w-7 h-7 sm:w-9 sm:h-9 border-2 border-ink shrink-0 overflow-hidden", color)}>
             <span className="sm:hidden"><Facehash name={repo.domain} size={28} /></span>
             <span className="hidden sm:block"><Facehash name={repo.domain} size={36} /></span>
           </div>
