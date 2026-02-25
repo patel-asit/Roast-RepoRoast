@@ -16,6 +16,11 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: 'Repo Roast',
   description: 'Drop your repo URL. We\'ll find every bullshit claim in your code.',
+  openGraph: {
+    title: "Repo Roast",
+    description: "Drop your repo URL. We'll find every bullshit claim in your code.",
+    images: ["RepoRoastOG.png"],
+  },
 }
 
 export default function RootLayout({
