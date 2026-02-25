@@ -59,7 +59,7 @@ export function HeroSection() {
     }
   }, [url])
 
-  const handleDestroyClick = async () => {
+  const handleRoastClick = async () => {
     setRoasting(true)
     setResult(null)
     setRoastedUrl(url)
@@ -126,7 +126,7 @@ export function HeroSection() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 border-2 border-ink bg-cream text-ink px-3 py-1.5 text-xs font-mono hover:bg-ink hover:text-primary-foreground transition-colors duration-100"
               >
-                {/* {new URL(roastedUrl).pathname.split("/").filter(Boolean)[1]} */}
+                {parseGitHubUrl(roastedUrl)?.repo ?? roastedUrl}
                 <ExternalLink size={15} />
               </a>
 
@@ -145,8 +145,7 @@ export function HeroSection() {
           {/* Roast content */}
           <div className="flex flex-col gap-6">
             <div className="text-sm text-ink leading-7 whitespace-pre-wrap">
-
-              <TextType 
+              <TextType
                 text={result.roast}
                 typingSpeed={10}
                 pauseDuration={0}
@@ -155,8 +154,6 @@ export function HeroSection() {
                 cursorCharacter="_"
                 cursorBlinkDuration={0.5}
               />
-              {/* {result.roast} */}
-              
             </div>
             <div className="border-t-2 border-ink/20 pt-5">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -177,7 +174,7 @@ export function HeroSection() {
           Roast My Repo
         </h1>
         <p className="mt-4 sm:mt-6 text-sm text-muted-foreground max-w-xl text-pretty">
-          {"Drop your repo URL. We'll find every bullshit thing you put in your code."}
+          {"Drop your repo URL. We'll find every bullshit thing you put on github."}
         </p>
 
         <div className="mt-8 sm:mt-10 flex w-full max-w-xl flex-col gap-3">
@@ -190,11 +187,33 @@ export function HeroSection() {
               className="flex-1 min-w-0 border-2 border-ink bg-card text-card-foreground px-3 sm:px-4 py-3 text-sm font-normal tracking-normal placeholder:text-muted-foreground focus:outline-none"
             />
             <button
-              onClick={handleDestroyClick}
+              onClick={handleRoastClick}
               disabled={roasting}
-              className="border-2 border-ink border-l-0 bg-ink text-primary-foreground px-4 sm:px-6 md:px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-widest hover:bg-yellow hover:text-ink transition-all duration-100 cursor-pointer shrink-0 disabled:opacity-50"
+              className="border-2 border-ink bg-yellow text-ink px-4 sm:px-6 md:px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer shrink-0 disabled:opacity-50 select-none relative overflow-hidden"
+              style={{
+                boxShadow: 'inset 0px -4px 0px rgba(0,0,0,0.4), inset 0px 2px 0px rgba(255,255,255,0.5), inset 4px 0px 0px rgba(255,255,255,0.3), inset -4px 0px 0px rgba(0,0,0,0.2)',
+                paddingBottom: '16px',
+                paddingTop: '8px',
+              }}
+              onMouseDown={e => {
+                if (!roasting) {
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = 'inset 0px 4px 0px rgba(0,0,0,0.3), inset 0px -1px 0px rgba(255,255,255,0.2), inset 4px 0px 0px rgba(0,0,0,0.15), inset -4px 0px 0px rgba(255,255,255,0.1)';
+                  (e.currentTarget as HTMLButtonElement).style.paddingBottom = '12px';
+                  (e.currentTarget as HTMLButtonElement).style.paddingTop = '12px';
+                }
+              }}
+              onMouseUp={e => {
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = 'inset 0px -4px 0px rgba(0,0,0,0.4), inset 0px 2px 0px rgba(255,255,255,0.5), inset 4px 0px 0px rgba(255,255,255,0.3), inset -4px 0px 0px rgba(0,0,0,0.2)';
+                (e.currentTarget as HTMLButtonElement).style.paddingBottom = '16px';
+                (e.currentTarget as HTMLButtonElement).style.paddingTop = '8px';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = 'inset 0px -4px 0px rgba(0,0,0,0.4), inset 0px 2px 0px rgba(255,255,255,0.5), inset 4px 0px 0px rgba(255,255,255,0.3), inset -4px 0px 0px rgba(0,0,0,0.2)';
+                (e.currentTarget as HTMLButtonElement).style.paddingBottom = '16px';
+                (e.currentTarget as HTMLButtonElement).style.paddingTop = '8px';
+              }}
             >
-              Destroy It
+              Roast It
             </button>
           </div>
 

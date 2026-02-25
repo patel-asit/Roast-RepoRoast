@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -24,12 +25,12 @@ const SKULL_SIZE = 36
 
 // Spring params for the box shake
 const STIFFNESS = 0.28
-const DAMPING   = 0.72
-const IMPULSE   = 7
+const DAMPING = 0.72
+const IMPULSE = 7
 
 export function RoastingLoadingState() {
   const skullWrapperRef = useRef<HTMLDivElement | null>(null)
-  const boxRef          = useRef<HTMLDivElement | null>(null)
+  const boxRef = useRef<HTMLDivElement | null>(null)
 
   const posRef = useRef({
     x: Math.random() * (BOX_W - SKULL_SIZE),
@@ -66,7 +67,7 @@ export function RoastingLoadingState() {
   // DVD-style bounce + box spring shake
   useEffect(() => {
     const skull = skullWrapperRef.current
-    const box   = boxRef.current
+    const box = boxRef.current
     if (!skull || !box) return
 
     const maxX = BOX_W - SKULL_SIZE
@@ -104,7 +105,7 @@ export function RoastingLoadingState() {
       s.y += s.vy
 
       skull.style.transform = `translate(${p.x}px, ${p.y}px)`
-      box.style.transform   = `translate(${s.x}px, ${s.y}px)`
+      box.style.transform = `translate(${s.x}px, ${s.y}px)`
 
       rafRef.current = requestAnimationFrame(tick)
     }

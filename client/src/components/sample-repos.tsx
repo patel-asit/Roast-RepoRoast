@@ -13,7 +13,7 @@ export function SampleRepos({ onSelect }: { onSelect: (url: string) => void }) {
   return (
     <div className="mt-6 flex flex-col items-center gap-2">
       <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        Try a sample
+        Try one of these
       </span>
       <div className="flex flex-col items-center gap-2">
         <div className="flex flex-wrap justify-center gap-2">
