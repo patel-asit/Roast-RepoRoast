@@ -16,6 +16,7 @@ export function HeroSection() {
   const [roasting, setRoasting] = useState(false)
   const [profanity, setProfanity] = useState(true)
   const [roastedUrl, setRoastedUrl] = useState("")
+  const [roastedRepo, setRoastedRepo] = useState<{ owner: string; name: string } | null>(null)
 
   // Background pre-fetch state
   const summaryRef = useRef<RepoSummary | null>(null)
@@ -93,6 +94,7 @@ export function HeroSection() {
       toast.error(roast.message)
     } else {
       setResult(roast)
+      setRoastedRepo({ owner: resolvedSummary.owner, name: resolvedSummary.name })
     }
   }
 
@@ -121,7 +123,7 @@ export function HeroSection() {
 
             <div className="flex items-center gap-2 shrink-0">
               <a
-                href={roastedUrl}
+                href={roastedRepo ? `https://github.com/${roastedRepo.owner}/${roastedRepo.name}` : `https://github.com/${roastedUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 border-2 border-ink bg-cream text-ink px-3 py-1.5 text-xs font-mono hover:bg-ink hover:text-primary-foreground transition-colors duration-100"
