@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { Space_Mono } from 'next/font/google'
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from '@/components/ui/toaster'
+import { Navbar } from '@/components/navbar'
+import { RecentlyRoasted } from '@/components/recently-roasted'
+import { Footer } from '@/components/footer'
 import './globals.css'
 
 const spaceMono = Space_Mono({
@@ -22,8 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${spaceMono.variable} font-mono antialiased`}>
-        {children}
+      <body className={`${spaceMono.variable} font-mono antialiased min-h-screen flex flex-col`}>
+        <Navbar />
+        <main className="flex-1 flex flex-col">
+          {children}
+        </main>
+        <RecentlyRoasted />
+        <Footer />
         <Toaster />
       </body>
       <Analytics />

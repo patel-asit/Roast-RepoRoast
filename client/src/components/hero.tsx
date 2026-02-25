@@ -1,22 +1,18 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { fetchRepoSummary, fetchRoast, parseGitHubUrl, type RepoSummary, type RoastResult } from "@/lib/github"
+import { useRouter } from "next/navigation"
+import { fetchRepoSummary, parseGitHubUrl, type RepoSummary } from "@/lib/github"
+import { setCachedSummary } from "@/lib/repo-cache"
 import { AvatarStrip } from "./avatar-strip"
 import { SampleRepos } from "./sample-repos"
 import { toast } from "@/components/ui/toaster"
-import { ExternalLink, Share2 } from "lucide-react"
-import { ArrowLeftIcon } from "./ui/arrow-left"
-import { RoastingLoadingState } from "./roasting-loading-state"
-import TextType from "./TextType"
 
 export function HeroSection() {
+  const router = useRouter()
   const [url, setUrl] = useState("")
-  const [result, setResult] = useState<RoastResult | null>(null)
-  const [roasting, setRoasting] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [profanity, setProfanity] = useState(true)
-  const [roastedUrl, setRoastedUrl] = useState("")
-  const [roastedRepo, setRoastedRepo] = useState<{ owner: string; name: string } | null>(null)
 
   // Background pre-fetch state
   const summaryRef = useRef<RepoSummary | null>(null)
@@ -61,9 +57,13 @@ export function HeroSection() {
   }, [url])
 
   const handleRoastClick = async () => {
-    setRoasting(true)
-    setResult(null)
-    setRoastedUrl(url)
+    const parsed = parseGitHubUrl(url)
+    if (!parsed) {
+      toast.error("Please enter a valid GitHub repository URL.")
+      return
+    }
+
+    setSubmitting(true)
     currentUrlRef.current = url
 
     let resolvedSummary = summaryRef.current
@@ -80,7 +80,7 @@ export function HeroSection() {
 
       const res = await promise
       if ("error" in res) {
-        setRoasting(false)
+        setSubmitting(false)
         toast.error(res.message)
         return
       }
@@ -88,84 +88,11 @@ export function HeroSection() {
       summaryRef.current = res
     }
 
-    const roast = await fetchRoast(resolvedSummary, profanity)
-    setRoasting(false)
-    if ("error" in roast) {
-      toast.error(roast.message)
-    } else {
-      setResult(roast)
-      setRoastedRepo({ owner: resolvedSummary.owner, name: resolvedSummary.name })
-    }
-  }
+    // Store the pre-fetched summary so the roast page can pick it up
+    setCachedSummary(parsed.owner, parsed.repo, resolvedSummary)
 
-  const handleBack = () => {
-    setResult(null)
-    setRoasting(false)
-    setRoastedUrl("")
-  }
-
-  // Loading state
-  if (roasting) return <RoastingLoadingState />
-
-  // reader mode type view
-  if (result) {
-    return (
-      <section className="bg-cream min-h-[60vh] px-4 py-12 sm:px-6">
-        <div className="max-w-xl mx-auto flex flex-col gap-6">
-          {/* Top bar */}
-          <div className="flex items-center justify-between gap-3">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-2 border-2 border-ink bg-cream text-ink px-3 py-1.5 text-xs font-bold uppercase tracking-widest hover:bg-ink hover:text-primary-foreground transition-colors duration-100 cursor-pointer shrink-0"
-            >
-              <ArrowLeftIcon size={15} />
-            </button>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <a
-                href={roastedRepo ? `https://github.com/${roastedRepo.owner}/${roastedRepo.name}` : `https://github.com/${roastedUrl}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 border-2 border-ink bg-cream text-ink px-3 py-1.5 text-xs font-mono hover:bg-ink hover:text-primary-foreground transition-colors duration-100"
-              >
-                {parseGitHubUrl(roastedUrl)?.repo ?? roastedUrl}
-                <ExternalLink size={15} />
-              </a>
-
-              <button
-                className="flex items-center justify-center border-2 border-ink bg-cream text-ink w-7 h-7 hover:bg-ink hover:text-primary-foreground transition-colors duration-100 cursor-pointer"
-                aria-label="Share"
-              >
-                <Share2 size={15} />
-              </button>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="border-t border-ink/20 w-full" />
-
-          {/* Roast content */}
-          <div className="flex flex-col gap-6">
-            <div className="text-sm text-ink leading-7 whitespace-pre-wrap">
-              <TextType
-                text={result.roast}
-                typingSpeed={10}
-                pauseDuration={0}
-                showCursor
-                loop={false}
-                cursorCharacter="_"
-                cursorBlinkDuration={0.5}
-              />
-            </div>
-            <div className="border-t-2 border-ink/20 pt-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Verdict: {result.verdict}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-    )
+    // Navigate to the roast route
+    router.push(`/roast/${encodeURIComponent(parsed.owner)}/${encodeURIComponent(parsed.repo)}?profanity=${profanity}`)
   }
 
   // Default form view
@@ -190,7 +117,7 @@ export function HeroSection() {
             />
             <button
               onClick={handleRoastClick}
-              disabled={roasting}
+              disabled={submitting}
               className="border-2 border-ink bg-yellow text-ink px-4 sm:px-6 md:px-8 py-3 text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer shrink-0 disabled:opacity-50 select-none relative overflow-hidden"
               style={{
                 boxShadow: 'inset 0px -4px 0px rgba(0,0,0,0.4), inset 0px 2px 0px rgba(255,255,255,0.5), inset 4px 0px 0px rgba(255,255,255,0.3), inset -4px 0px 0px rgba(0,0,0,0.2)',
@@ -198,7 +125,7 @@ export function HeroSection() {
                 paddingTop: '8px',
               }}
               onMouseDown={e => {
-                if (!roasting) {
+                if (!submitting) {
                   (e.currentTarget as HTMLButtonElement).style.boxShadow = 'inset 0px 4px 0px rgba(0,0,0,0.3), inset 0px -1px 0px rgba(255,255,255,0.2), inset 4px 0px 0px rgba(0,0,0,0.15), inset -4px 0px 0px rgba(255,255,255,0.1)';
                   (e.currentTarget as HTMLButtonElement).style.paddingBottom = '12px';
                   (e.currentTarget as HTMLButtonElement).style.paddingTop = '12px';
