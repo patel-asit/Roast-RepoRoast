@@ -169,7 +169,7 @@ export function RecentlyRoasted() {
             >
               {rowOne.map((repo, index) => (
                 <RepoCard
-                  key={repo.domain}
+                  key={`${repo.domain}-${index}`}
                   repo={repo}
                   index={index}
                   onClick={() => handleRepoClick(repo.domain)}
@@ -184,7 +184,7 @@ export function RecentlyRoasted() {
             >
               {rowTwo.map((repo, index) => (
                 <RepoCard
-                  key={repo.domain}
+                  key={`${repo.domain}-${index}`}
                   repo={repo}
                   index={index}
                   onClick={() => handleRepoClick(repo.domain)}
