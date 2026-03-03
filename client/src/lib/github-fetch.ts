@@ -20,7 +20,7 @@ export async function githubFetch<T>(path: string): Promise<T> {
         res.status === 404
           ? "Repository not found or is private."
           : res.status === 403
-          ? "GitHub API rate limit hit. Try again in a minute."
+          ? "GitHub API rate limit hit. Try again in a minute or two."
           : `GitHub API error: ${res.status}`,
     };
     throw err;

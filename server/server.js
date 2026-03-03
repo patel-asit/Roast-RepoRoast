@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import cors from 'cors';
 import { Mistral } from '@mistralai/mistralai';
 import { Redis } from '@upstash/redis';
+import { createStreamingParser } from 'llm-json-validator';
 
 import { roastPrompt, pickFilesPrompt } from './prompts.js';
 
@@ -31,13 +32,27 @@ app.post('/roast', async (req, res) => {
 
     const repoUrl = `github.com/${repo_summary.owner}/${repo_summary.name}`;
 
-    // Check cache first
+    // Check cache first and return normal JSON response
     const cached = await getCachedRoast(repoUrl, profanity);
     if (cached) {
-      return res.status(200).json({ roast: cached.roast, verdict: cached.verdict, cached: true });
+      return res.status(200).json({
+        roast: cached.roast,
+        verdict: cached.verdict,
+        cached: true,
+      });
     }
 
-    const chatResponse = await mistral.chat.complete({
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    const sendEvent = (event, payload) => {
+      res.write(`event: ${event}\n`);
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    const stream = await mistral.chat.stream({
       model: 'mistral-large-latest',
       messages: [
         { role: 'system', content: roastPrompt(profanity) },
@@ -46,17 +61,55 @@ app.post('/roast', async (req, res) => {
       responseFormat: { type: 'json_object' },
     });
 
-    const result = JSON.parse(chatResponse.choices[0].message.content.trim());
+    const parser = createStreamingParser({
+      returnParsedJson: false,
+      dummyValues: {
+        string: '',
+        number: 0,
+        boolean: false,
+        null: null,
+      },
+    });
+
+    let latest = { roast: '', verdict: '' };
+
+    for await (const event of stream) {
+      const textChunk = extractTextFromStreamEvent(event);
+      if (!textChunk) continue;
+
+      const balanced = parser.appendChunk(textChunk);
+      if (typeof balanced !== 'string') continue;
+
+      const parsed = tryParseRoastJson(balanced, latest);
+      if (!parsed) continue;
+
+      latest = parsed;
+      sendEvent('chunk', latest);
+    }
+
+    const finalBalanced = parser.getCurrentData();
+    if (typeof finalBalanced === 'string') {
+      const finalParsed = tryParseRoastJson(finalBalanced, latest);
+      if (finalParsed) latest = finalParsed;
+    }
 
     // Save to cache, push to recent list, increment counter (non-blocking)
-    setCachedRoast(repoUrl, profanity, result.roast, result.verdict);
-    pushRecentRoast(repoUrl, result.verdict);
-    incrementRoastCount();
+    if (latest.roast) {
+      setCachedRoast(repoUrl, profanity, latest.roast, latest.verdict);
+      pushRecentRoast(repoUrl, latest.verdict);
+      incrementRoastCount();
+    }
 
-    res.status(200).json(result);
+    sendEvent('done', { ...latest, cached: false });
+    res.end();
   } catch (error) {
     console.error('Error roasting repo:', error);
-    res.status(500).json({ error: 'Something went wrong' });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Something went wrong' });
+    }
+    res.write(`event: error\n`);
+    res.write(`data: ${JSON.stringify({ message: 'Something went wrong' })}\n\n`);
+    res.end();
   }
 });
 
@@ -186,5 +239,68 @@ async function getRoastCount() {
   } catch (err) {
     console.warn('Redis get count error (non-fatal):', err?.message);
     return 0;
+  }
+}
+
+function extractTextFromStreamEvent(event) {
+  const payload = event?.data ?? event;
+  const delta = payload?.choices?.[0]?.delta?.content;
+
+  if (typeof delta === 'string') {
+    return delta;
+  }
+
+  if (Array.isArray(delta)) {
+    return delta
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (typeof part?.text === 'string') return part.text;
+        return '';
+      })
+      .join('');
+  }
+
+  const messageContent = payload?.choices?.[0]?.message?.content;
+  if (typeof messageContent === 'string') {
+    return messageContent;
+  }
+
+  if (Array.isArray(messageContent)) {
+    return messageContent
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (typeof part?.text === 'string') return part.text;
+        return '';
+      })
+      .join('');
+  }
+
+  return '';
+}
+
+function tryParseRoastJson(raw, previous) {
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+
+  const patched = raw.replace(
+    /("roast"\s*:\s*"[\s\S]*?")\s*("verdict"\s*:)/,
+    '$1, $2',
+  );
+
+  try {
+    const parsed = JSON.parse(patched);
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    const next = {
+      roast: typeof parsed.roast === 'string' ? parsed.roast : previous.roast,
+      verdict: typeof parsed.verdict === 'string' ? parsed.verdict : previous.verdict,
+    };
+
+    if (next.roast === previous.roast && next.verdict === previous.verdict) {
+      return null;
+    }
+
+    return next;
+  } catch {
+    return null;
   }
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
-import { fetchRepoSummary, fetchRoast, type RoastResult } from "@/lib/github"
+import { fetchRepoSummary, streamRoast, type RoastResult } from "@/lib/github"
 import { popCachedSummary } from "@/lib/repo-cache"
 import { toast } from "@/components/ui/toaster"
 import { RoastingLoadingState } from "@/components/roasting-loading-state"
@@ -20,6 +20,7 @@ export default function RoastPage() {
   const profanity = searchParams.get("profanity") !== "false"
 
   const [result, setResult] = useState<RoastResult | null>(null)
+  const [isCachedRoast, setIsCachedRoast] = useState(false)
   const [loading, setLoading] = useState(true)
   const hasStarted = useRef(false)
 
@@ -42,16 +43,29 @@ export default function RoastPage() {
         summary = res
       }
 
-      // 3. Call the roast endpoint
-      const roast = await fetchRoast(summary, profanity)
-      if ("error" in roast) {
-        toast.error(roast.message)
-        setLoading(false)
-        return
-      }
-
-      setResult(roast)
+      // 3. Start streaming roast output
+      setResult({ roast: "", verdict: "" })
+      setIsCachedRoast(false)
       setLoading(false)
+
+      const roastError = await streamRoast(summary, profanity, (chunk) => {
+        if (chunk.cached) {
+          setIsCachedRoast(true)
+        }
+
+        setResult((prev) => {
+          const previous = prev ?? { roast: "", verdict: "" }
+          return {
+            roast: chunk.roast || previous.roast,
+            verdict: chunk.verdict || previous.verdict,
+          }
+        })
+      })
+
+      if (roastError) {
+        toast.error(roastError.message)
+        setResult(null)
+      }
     }
 
     run()
@@ -126,15 +140,19 @@ export default function RoastPage() {
         {/* Roast content */}
         <div className="flex flex-col gap-6">
           <div className="text-sm text-ink leading-7 whitespace-pre-wrap">
-            <TextType
-              text={result.roast}
-              typingSpeed={10}
-              pauseDuration={0}
-              showCursor
-              loop={false}
-              cursorCharacter="_"
-              cursorBlinkDuration={0.5}
-            />
+            {isCachedRoast ? (
+              <TextType
+                text={result.roast}
+                typingSpeed={8}
+                deletingSpeed={0}
+                pauseDuration={0}
+                initialDelay={0}
+                loop={false}
+                showCursor={false}
+              />
+            ) : (
+              result.roast
+            )}
           </div>
           <div className="border-t-2 border-ink/20 pt-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">

@@ -41,6 +41,36 @@ export interface RoastResult {
   verdict: string;
 }
 
+export interface RoastStreamResult extends RoastResult {
+  cached?: boolean;
+}
+
+interface RoastStreamEvent {
+  event: string;
+  data: string;
+}
+
+function parseSseEvent(rawEvent: string): RoastStreamEvent | null {
+  const lines = rawEvent.split(/\r?\n/);
+  let event = "message";
+  const dataLines: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      event = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      dataLines.push(line.slice(5).trimStart());
+    }
+  }
+
+  if (dataLines.length === 0) return null;
+
+  return {
+    event,
+    data: dataLines.join("\n"),
+  };
+}
+
 export async function fetchRoast(
   repoSummary: RepoSummary,
   profanity: boolean
@@ -56,6 +86,91 @@ export async function fetchRoast(
     return res.json() as Promise<RoastResult>;
   } catch (err: any) {
     return { error: true, status: 500, message: err?.message ?? "Failed to fetch roast." };
+  }
+}
+
+export async function streamRoast(
+  repoSummary: RepoSummary,
+  profanity: boolean,
+  onChunk: (result: RoastStreamResult) => void
+): Promise<GitHubFetchError | void> {
+  const serverUrl = process.env.NEXT_PUBLIC_REPO_ROAST_SERVER_URL ?? "http://localhost:5000";
+
+  try {
+    const res = await fetch(`${serverUrl}/roast`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({ repo_summary: repoSummary, profanity }),
+    });
+
+    if (!res.ok) throw new Error(`Roast server error: ${res.status}`);
+
+    const contentType = res.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const payload = await res.json() as Partial<RoastResult> & { cached?: boolean };
+      onChunk({
+        roast: typeof payload.roast === "string" ? payload.roast : "",
+        verdict: typeof payload.verdict === "string" ? payload.verdict : "",
+        cached: payload.cached === true,
+      });
+      return;
+    }
+
+    if (!res.body) throw new Error("No response body from roast stream.");
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      let separatorIndex = buffer.indexOf("\n\n");
+      while (separatorIndex !== -1) {
+        const rawEvent = buffer.slice(0, separatorIndex);
+        buffer = buffer.slice(separatorIndex + 2);
+
+        const event = parseSseEvent(rawEvent);
+        if (!event) {
+          separatorIndex = buffer.indexOf("\n\n");
+          continue;
+        }
+
+        if (event.event === "error") {
+          let message = "Failed to fetch roast.";
+          try {
+            const payload = JSON.parse(event.data) as { message?: string };
+            if (payload?.message) message = payload.message;
+          } catch {
+            // ignore invalid payload
+          }
+          return { error: true, status: 500, message };
+        }
+
+        if (event.event === "chunk" || event.event === "done") {
+          try {
+            const payload = JSON.parse(event.data) as Partial<RoastResult>;
+            onChunk({
+              roast: typeof payload.roast === "string" ? payload.roast : "",
+              verdict: typeof payload.verdict === "string" ? payload.verdict : "",
+              cached: false,
+            });
+          } catch {
+            // ignore malformed stream chunk
+          }
+        }
+
+        separatorIndex = buffer.indexOf("\n\n");
+      }
+    }
+  } catch (err: any) {
+    return { error: true, status: 500, message: err?.message ?? "Failed to stream roast." };
   }
 }
 
