@@ -88,18 +88,26 @@ export async function fetchRepoSummary(
   const base = `/repos/${owner}/${repo}`;
 
   try {
-    const [repoData, languageData, contributors, commits, readmeData] =
+    const repoDataPromise = githubFetch<any>(base);
+    const languagePromise = githubFetch<Record<string, number>>(`${base}/languages`);
+    const contributorsPromise = githubFetch<any[]>(`${base}/contributors?per_page=10&anon=true`);
+    const commitsPromise = githubFetch<any[]>(`${base}/commits?per_page=10`);
+    const readmePromise = githubFetch<any>(`${base}/readme`);
+
+    const r = await repoDataPromise;
+
+    const filetreePromise = grabFileTreeAndImportantFileContents(owner, repo, r.default_branch);
+
+    const [languageData, contributors, commits, readmeData, filetree] =
       await Promise.allSettled([
-        githubFetch<any>(base),
-        githubFetch<Record<string, number>>(`${base}/languages`),
-        githubFetch<any[]>(`${base}/contributors?per_page=10&anon=true`),
-        githubFetch<any[]>(`${base}/commits?per_page=10`),
-        githubFetch<any>(`${base}/readme`),
+        languagePromise,
+        contributorsPromise,
+        commitsPromise,
+        readmePromise,
+        filetreePromise,
       ]);
 
-    if (repoData.status === "rejected") throw repoData.reason;
-
-    const r = repoData.value;
+    if (filetree.status === "rejected") throw filetree.reason;
 
     // Decode README, strip images and HTML, keep plain text
     let readme: string | null = null;
@@ -115,8 +123,6 @@ export async function fetchRepoSummary(
         readme = null;
       }
     }
-
-    const filetree = await grabFileTreeAndImportantFileContents(owner, repo, r.default_branch);
 
     return {
       name: r.name,
@@ -141,8 +147,8 @@ export async function fetchRepoSummary(
           ? commits.value.map((c: any) => c.commit?.message?.split("\n")[0] ?? "").filter(Boolean)
           : [],
       is_archived: r.archived ?? false,
-      file_tree: filetree.raw_tree,
-      file_contents: filetree.files,
+      file_tree: filetree.value.raw_tree,
+      file_contents: filetree.value.files,
     };
   } catch (err: any) {
     if (err?.error) return err as GitHubFetchError;
