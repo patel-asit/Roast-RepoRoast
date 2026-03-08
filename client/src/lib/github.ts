@@ -14,6 +14,7 @@ export interface RepoSummary {
   languages: string[];
   stars: number;
   forks: number;
+  fork: boolean;
   open_issues: number;
   contributor_count: number;
   created_at: string;
@@ -249,6 +250,7 @@ export async function fetchRepoSummary(
           : [],
       stars: r.stargazers_count ?? 0,
       forks: r.forks_count ?? 0,
+      fork: r.fork ?? false,
       open_issues: r.open_issues_count ?? 0,
       contributor_count:
         contributors.status === "fulfilled" ? contributors.value.length : 0,
