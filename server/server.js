@@ -139,10 +139,10 @@ app.post('/roast', async (req, res) => {
   } catch (error) {
     console.error('Error roasting repo:', error);
     if (!res.headersSent) {
-      return res.status(500).json({ error: 'Something went wrong' });
+      return res.status(500).json({ error: 'Too many roasts being done!! Try again in a few seconds' });
     }
     res.write(`event: error\n`);
-    res.write(`data: ${JSON.stringify({ message: 'Something went wrong' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ message: 'Too many roasts being done!! Try again in a few seconds' })}\n\n`);
     res.end();
   }
 });
@@ -167,7 +167,7 @@ app.post('/pick-files', async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error('Error picking files:', error);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: 'Too many roasts being done!! Try again in a few seconds' });
   }
 });
 
