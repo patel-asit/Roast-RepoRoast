@@ -30,6 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="google-site-verification" content="s2qiNqXBdZWFi1dsEawfzq8HO1JflKSdMqoKyLNwXdQ" />
+      </head>
       <body className={`${spaceMono.variable} font-mono antialiased min-h-screen flex flex-col`}>
         <Navbar />
         <main className="flex-1 flex flex-col">
