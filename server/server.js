@@ -18,11 +18,17 @@ const mistralKeys = [
 
 if (mistralKeys.length === 0) throw new Error('No Mistral API keys found');
 
-let mistralKeyIndex = Math.floor(Math.random() * mistralKeys.length);
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL ?? "",
+  token: process.env.UPSTASH_REDIS_REST_TOKEN ?? "",
+});
 
-function getMistralClient() {
-  const key = mistralKeys[mistralKeyIndex % mistralKeys.length];
-  mistralKeyIndex = (mistralKeyIndex + 1) % mistralKeys.length;
+async function getMistralClient() {
+  let idx = 0;
+  try {
+    idx = await redis.incr('mistral:key_index');
+  } catch { }
+  const key = mistralKeys[idx % mistralKeys.length];
   return { client: new Mistral({ apiKey: key }), keyLabel: `${key.slice(0, 4)}...${key.slice(-4)}` };
 }
 
@@ -30,25 +36,29 @@ async function mistralCallWithRetry(fn) {
   const maxAttempts = mistralKeys.length * 2;
   let lastError;
   for (let i = 0; i < maxAttempts; i++) {
-    const { client, keyLabel } = getMistralClient();
+    const { client, keyLabel } = await getMistralClient();
+    console.log(`[Attempt ${i + 1}/${maxAttempts}] Trying key: ${keyLabel}`);
     try {
       const result = await fn(client);
-      console.log(`Using Mistral API key: ${keyLabel}`);
+      console.log(`[Attempt ${i + 1}/${maxAttempts}] Key ${keyLabel} succeeded`);
       return result;
     } catch (err) {
       lastError = err;
       const status = err?.statusCode ?? err?.status ?? err?.response?.status;
-      if (status === 429 || status === 402) continue;
+      const msgHas429 = /429|rate.?limit/i.test(err?.message ?? '');
+      const msgHas402 = /402|payment/i.test(err?.message ?? '');
+      console.log(`[Attempt ${i + 1}/${maxAttempts}] Key ${keyLabel} failed (${status || err?.message?.slice(0, 60)})`);
+      if (status === 429 || status === 402 || msgHas429 || msgHas402) {
+        console.log(`[Attempt ${i + 1}/${maxAttempts}] Rate limited, retrying next key in 3s...`);
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
       throw err;
     }
   }
+  console.log(`All ${maxAttempts} attempts exhausted, no keys available`);
   throw lastError;
 }
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL ?? "",
-  token: process.env.UPSTASH_REDIS_REST_TOKEN ?? "",
-});
 
 const app = express();
 app.use(cors());
