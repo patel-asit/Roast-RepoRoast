@@ -16,7 +16,7 @@ const mistralKeys = Object.entries(process.env)
 
 if (mistralKeys.length === 0) throw new Error('No Mistral API keys found');
 
-let mistralKeyIndex = 0;
+let mistralKeyIndex = Math.floor(Math.random() * mistralKeys.length);
 
 function getMistralClient() {
   const key = mistralKeys[mistralKeyIndex % mistralKeys.length];
