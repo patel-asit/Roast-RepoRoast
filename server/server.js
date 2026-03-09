@@ -9,9 +9,39 @@ import { roastPrompt, pickFilesPrompt } from './prompts.js';
 
 dotenv.config();
 
-const mistral = new Mistral({
-  apiKey: process.env.MISTRAL_API_KEY ?? "",
-});
+const mistralKeys = Object.entries(process.env)
+  .filter(([key]) => key.match(/^MISTRAL_API_KEY(_\d+)?$/))
+  .map(([, value]) => value)
+  .filter(Boolean);
+
+if (mistralKeys.length === 0) throw new Error('No Mistral API keys found');
+
+let mistralKeyIndex = 0;
+
+function getMistralClient() {
+  const key = mistralKeys[mistralKeyIndex % mistralKeys.length];
+  mistralKeyIndex = (mistralKeyIndex + 1) % mistralKeys.length;
+  return { client: new Mistral({ apiKey: key }), keyLabel: `${key.slice(0, 4)}...${key.slice(-4)}` };
+}
+
+async function mistralCallWithRetry(fn) {
+  const maxAttempts = mistralKeys.length * 2;
+  let lastError;
+  for (let i = 0; i < maxAttempts; i++) {
+    const { client, keyLabel } = getMistralClient();
+    try {
+      const result = await fn(client);
+      console.log(`Using Mistral API key: ${keyLabel}`);
+      return result;
+    } catch (err) {
+      lastError = err;
+      const status = err?.statusCode ?? err?.status ?? err?.response?.status;
+      if (status === 429 || status === 402) continue;
+      throw err;
+    }
+  }
+  throw lastError;
+}
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL ?? "",
@@ -52,46 +82,50 @@ app.post('/roast', async (req, res) => {
       res.write(`data: ${JSON.stringify(payload)}\n\n`);
     };
 
-    const stream = await mistral.chat.stream({
-      model: 'mistral-large-latest',
-      messages: [
-        { role: 'system', content: roastPrompt(profanity) },
-        { role: 'user', content: JSON.stringify(repo_summary) },
-      ],
-      responseFormat: { type: 'json_object' },
-    });
-
-    const parser = createStreamingParser({
-      returnParsedJson: false,
-      dummyValues: {
-        string: '',
-        number: 0,
-        boolean: false,
-        null: null,
-      },
-    });
-
     let latest = { roast: '', verdict: '' };
 
-    for await (const event of stream) {
-      const textChunk = extractTextFromStreamEvent(event);
-      if (!textChunk) continue;
+    await mistralCallWithRetry(async (client) => {
+      const stream = await client.chat.stream({
+        model: 'mistral-large-latest',
+        messages: [
+          { role: 'system', content: roastPrompt(profanity) },
+          { role: 'user', content: JSON.stringify(repo_summary) },
+        ],
+        responseFormat: { type: 'json_object' },
+      });
 
-      const balanced = parser.appendChunk(textChunk);
-      if (typeof balanced !== 'string') continue;
+      const parser = createStreamingParser({
+        returnParsedJson: false,
+        dummyValues: {
+          string: '',
+          number: 0,
+          boolean: false,
+          null: null,
+        },
+      });
 
-      const parsed = tryParseRoastJson(balanced, latest);
-      if (!parsed) continue;
+      latest = { roast: '', verdict: '' };
 
-      latest = parsed;
-      sendEvent('chunk', latest);
-    }
+      for await (const event of stream) {
+        const textChunk = extractTextFromStreamEvent(event);
+        if (!textChunk) continue;
 
-    const finalBalanced = parser.getCurrentData();
-    if (typeof finalBalanced === 'string') {
-      const finalParsed = tryParseRoastJson(finalBalanced, latest);
-      if (finalParsed) latest = finalParsed;
-    }
+        const balanced = parser.appendChunk(textChunk);
+        if (typeof balanced !== 'string') continue;
+
+        const parsed = tryParseRoastJson(balanced, latest);
+        if (!parsed) continue;
+
+        latest = parsed;
+        sendEvent('chunk', latest);
+      }
+
+      const finalBalanced = parser.getCurrentData();
+      if (typeof finalBalanced === 'string') {
+        const finalParsed = tryParseRoastJson(finalBalanced, latest);
+        if (finalParsed) latest = finalParsed;
+      }
+    });
 
     // Save to cache, push to recent list, increment counter (non-blocking)
     if (latest.roast) {
@@ -121,13 +155,13 @@ app.post('/pick-files', async (req, res) => {
       return res.status(400).json({ error: 'Missing or invalid paths array' });
     }
 
-    const chatResponse = await mistral.chat.complete({
+    const chatResponse = await mistralCallWithRetry(m => m.chat.complete({
       model: 'mistral-small-latest',
       messages: [{ role: 'user', content: pickFilesPrompt(paths) }],
       responseFormat: { type: 'json_object' },
       temperature: 0,
       maxTokens: 512,
-    });
+    }));
 
     const result = JSON.parse(chatResponse.choices[0].message.content.trim());
     res.status(200).json(result);
