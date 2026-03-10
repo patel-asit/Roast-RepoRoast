@@ -9,11 +9,10 @@ import { roastPrompt, pickFilesPrompt } from './prompts.js';
 
 dotenv.config();
 
-const mistralKeys = [
-  process.env.MISTRAL_API_KEY_1,
-  process.env.MISTRAL_API_KEY_2,
-  process.env.MISTRAL_API_KEY_3,
-].filter(Boolean);
+const mistralKeys = Object.entries(process.env)
+  .filter(([key]) => key.match(/^MISTRAL_API_KEY(_\d+)?$/))
+  .map(([, value]) => value)
+  .filter(Boolean);
 
 
 if (mistralKeys.length === 0) throw new Error('No Mistral API keys found');
