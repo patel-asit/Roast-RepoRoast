@@ -1,6 +1,7 @@
-export const MAX_FILES_TO_RETURN = 10;
+export const MAX_FILES_TO_RETURN = 7;
 export const MAX_FILE_CONTENT_CHARS = 3000; // per file, ~750 tokens
-export const MAX_TREE_ENTRIES = 300; // cap before sending to LLM
+export const MAX_TREE_ENTRIES = 300;
+export const MAX_README_CHARS = 2000;
 
 // Directories and patterns to strip from the tree before anything else.
 // Covers node_modules, build artifacts, lock files, media, etc.

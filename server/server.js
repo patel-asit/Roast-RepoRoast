@@ -63,6 +63,46 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+/**
+ * Convert repo_summary JSON into a compact text format.
+ * Eliminates JSON syntax overhead (quotes, brackets, commas)
+ */
+function buildCompactPrompt(s) {
+  const lines = [];
+  lines.push(`REPO: ${s.owner}/${s.name}`);
+  if (s.description) lines.push(`DESCRIPTION: ${s.description}`);
+  if (s.languages?.length) lines.push(`LANGUAGES: ${s.languages.join(', ')}`);
+  lines.push(`Stars: ${s.stars} | Forks: ${s.forks} | Issues: ${s.open_issues} | Contributors: ${s.contributor_count}`);
+  lines.push(`Created: ${(s.created_at ?? '').slice(0, 10)} | Last push: ${(s.last_pushed_at ?? '').slice(0, 10)} | Today: ${(s.current_date ?? '').slice(0, 10)}`);
+  if (s.license_name) lines.push(`License: ${s.license_name}`);
+  if (s.fork) lines.push('Fork: yes');
+  if (s.is_archived) lines.push('Archived: yes');
+
+  if (s.readme) {
+    lines.push('', 'README:', s.readme);
+  }
+
+  if (s.recent_commit_messages?.length) {
+    lines.push('', 'RECENT COMMITS:');
+    for (const msg of s.recent_commit_messages) lines.push(`- ${msg}`);
+  }
+
+  if (s.file_tree?.length) {
+    lines.push('', 'FILE TREE:');
+    lines.push(s.file_tree.join('\n'));
+  }
+
+  if (s.file_contents?.length) {
+    lines.push('', 'FILE CONTENTS:');
+    for (const f of s.file_contents) {
+      lines.push(`--- ${f.path}${f.truncated ? ' (truncated)' : ''} ---`);
+      lines.push(f.content);
+    }
+  }
+
+  return lines.join('\n');
+}
+
 app.post('/roast', async (req, res) => {
   try {
     const { repo_summary, profanity } = req.body;
@@ -100,7 +140,7 @@ app.post('/roast', async (req, res) => {
         model: 'mistral-large-latest',
         messages: [
           { role: 'system', content: roastPrompt(profanity) },
-          { role: 'user', content: JSON.stringify(repo_summary) },
+          { role: 'user', content: buildCompactPrompt(repo_summary) },
         ],
         responseFormat: { type: 'json_object' },
       });

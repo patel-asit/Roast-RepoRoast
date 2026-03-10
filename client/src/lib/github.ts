@@ -4,6 +4,7 @@
 
 import { grabFileTreeAndImportantFileContents, type FileContent } from "./filetree";
 import { githubFetch, type GitHubFetchError } from "./github-fetch";
+import { MAX_README_CHARS } from "./constants";
 
 export type { GitHubFetchError };
 
@@ -235,6 +236,9 @@ export async function fetchRepoSummary(
           .replace(/<img[^>]*>/gi, "")              // remove HTML images
           .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // flatten links to text
           .trim();
+        if (readme.length > MAX_README_CHARS) {
+          readme = readme.slice(0, MAX_README_CHARS) + "\n... [truncated]";
+        }
       } catch {
         readme = null;
       }
