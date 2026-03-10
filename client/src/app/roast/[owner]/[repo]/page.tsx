@@ -9,6 +9,7 @@ import { RoastingLoadingState } from "@/components/roasting-loading-state"
 import { ExternalLink, Share2 } from "lucide-react"
 import { ArrowLeftIcon } from "@/components/ui/arrow-left"
 import TextType from "@/components/TextType"
+import Image from "next/image"
 
 export default function RoastPage() {
   const params = useParams<{ owner: string; repo: string }>()
@@ -114,7 +115,7 @@ export default function RoastPage() {
     <section className="bg-cream min-h-[60vh] px-4 py-12 sm:px-6">
       <div className="max-w-xl mx-auto flex flex-col gap-6">
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-stretch justify-between gap-3">
           <button
             onClick={handleBack}
             className="flex items-center gap-2 border-2 border-ink bg-cream text-ink px-3 py-1.5 text-xs font-bold uppercase tracking-widest hover:bg-ink hover:text-primary-foreground transition-colors duration-100 cursor-pointer shrink-0"
@@ -122,20 +123,27 @@ export default function RoastPage() {
             <ArrowLeftIcon size={15} />
           </button>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-stretch gap-2 shrink-0">
             <a
               href={`https://github.com/${owner}/${repo}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 border-2 border-ink bg-cream text-ink px-3 py-1.5 text-xs font-mono hover:bg-ink hover:text-primary-foreground transition-colors duration-100"
             >
+              <Image
+                src={`https://github.com/${owner}.png?size=40`}
+                alt={owner}
+                width={20}
+                height={20}
+                className="w-5 h-5 rounded-full border border-ink/20"
+              />
               {repo}
               <ExternalLink size={15} />
             </a>
 
             <button
               onClick={handleShare}
-              className="flex items-center justify-center border-2 border-ink bg-cream text-ink w-7 h-7 hover:bg-ink hover:text-primary-foreground transition-colors duration-100 cursor-pointer"
+              className="flex items-center justify-center border-2 border-ink bg-cream text-ink px-2 py-1.5 hover:bg-ink hover:text-primary-foreground transition-colors duration-100 cursor-pointer"
               aria-label="Share"
             >
               <Share2 size={15} />
