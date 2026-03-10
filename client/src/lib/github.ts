@@ -43,6 +43,28 @@ export interface RoastResult {
   verdict: string;
 }
 
+export interface CachedRoastHit extends RoastResult {
+  cached: true;
+}
+
+export async function checkRoastCache(
+  owner: string,
+  repo: string,
+  profanity: boolean
+): Promise<CachedRoastHit | null> {
+  const serverUrl = process.env.NEXT_PUBLIC_REPO_ROAST_SERVER_URL ?? "http://localhost:5000";
+  try {
+    const params = new URLSearchParams({ owner, repo, profanity: String(profanity) });
+    const res = await fetch(`${serverUrl}/roast-check?${params}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.cached) return { roast: data.roast, verdict: data.verdict, cached: true };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export interface RoastStreamResult extends RoastResult {
   cached?: boolean;
 }

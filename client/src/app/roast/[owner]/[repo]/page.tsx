@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
-import { fetchRepoSummary, streamRoast, type RoastResult } from "@/lib/github"
+import { fetchRepoSummary, streamRoast, checkRoastCache, type RoastResult } from "@/lib/github"
 import { popCachedSummary } from "@/lib/repo-cache"
 import { toast } from "@/components/ui/toaster"
 import { RoastingLoadingState } from "@/components/roasting-loading-state"
@@ -29,10 +29,19 @@ export default function RoastPage() {
     hasStarted.current = true
 
     async function run() {
-      // 1. Try to use the pre-fetched summary from the in-memory cache
+      // 1. Check server-side cache first — avoids all GitHub API calls for already-roasted repos
+      const cached = await checkRoastCache(owner, repo, profanity)
+      if (cached) {
+        setResult({ roast: cached.roast, verdict: cached.verdict })
+        setIsCachedRoast(true)
+        setLoading(false)
+        return
+      }
+
+      // 2. Try to use the pre-fetched summary from the in-memory cache
       let summary = popCachedSummary(owner, repo)
 
-      // 2. If not cached (e.g. direct URL visit), fetch it now
+      // 3. If not cached (e.g. direct URL visit), fetch it now
       if (!summary) {
         const res = await fetchRepoSummary(`https://github.com/${owner}/${repo}`)
         if ("error" in res) {
@@ -43,7 +52,7 @@ export default function RoastPage() {
         summary = res
       }
 
-      // 3. Start streaming roast output
+      // 4. Start streaming roast output
       setResult({ roast: "", verdict: "" })
       setIsCachedRoast(false)
       setLoading(false)

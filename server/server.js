@@ -198,6 +198,24 @@ app.post('/roast', async (req, res) => {
   }
 });
 
+app.get('/roast-check', async (req, res) => {
+  try {
+    const { owner, repo, profanity } = req.query;
+    if (!owner || !repo) {
+      return res.status(400).json({ cached: false });
+    }
+    const repoUrl = `github.com/${owner}/${repo}`;
+    const useProfanity = profanity !== 'false';
+    const cached = await getCachedRoast(repoUrl, useProfanity);
+    if (cached) {
+      return res.status(200).json({ cached: true, roast: cached.roast, verdict: cached.verdict });
+    }
+    return res.status(200).json({ cached: false });
+  } catch {
+    return res.status(200).json({ cached: false });
+  }
+});
+
 app.post('/pick-files', async (req, res) => {
   try {
     const { paths } = req.body;
