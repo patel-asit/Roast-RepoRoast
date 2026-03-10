@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { fetchRepoSummary, parseGitHubUrl, type RepoSummary } from "@/lib/github"
+import { fetchRepoSummary, parseGitHubUrl, checkRoastCache, type RepoSummary, type CachedRoastHit } from "@/lib/github"
 import { setCachedSummary } from "@/lib/repo-cache"
 import { AvatarStrip } from "./avatar-strip"
 import { SampleRepos } from "./sample-repos"
@@ -17,6 +17,7 @@ export function HeroSection() {
   // Background pre-fetch state
   const summaryRef = useRef<RepoSummary | null>(null)
   const summaryPromiseRef = useRef<Promise<RepoSummary | { error: true; status: number; message: string }> | null>(null)
+  const cachedRoastRef = useRef<CachedRoastHit | null>(null)
   const currentUrlRef = useRef<string>("")
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -28,6 +29,7 @@ export function HeroSection() {
     if (!parsed) {
       summaryRef.current = null
       summaryPromiseRef.current = null
+      cachedRoastRef.current = null
       currentUrlRef.current = ""
       return
     }
@@ -35,10 +37,20 @@ export function HeroSection() {
     // URL changed — invalidate cached summary
     summaryRef.current = null
     summaryPromiseRef.current = null
+    cachedRoastRef.current = null
     currentUrlRef.current = url
 
-    debounceRef.current = setTimeout(() => {
+    debounceRef.current = setTimeout(async () => {
       const capturedUrl = url
+
+      // Check server cache first — if the roast already exists, no need to fetch repo data
+      const cached = await checkRoastCache(parsed.owner, parsed.repo, profanity)
+      if (currentUrlRef.current !== capturedUrl) return
+      if (cached) {
+        cachedRoastRef.current = cached
+        return
+      }
+
       const promise = fetchRepoSummary(capturedUrl)
       summaryPromiseRef.current = promise
 
@@ -54,7 +66,7 @@ export function HeroSection() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [url])
+  }, [url, profanity])
 
   const handleRoastClick = async () => {
     const parsed = parseGitHubUrl(url)
@@ -65,6 +77,12 @@ export function HeroSection() {
 
     setSubmitting(true)
     currentUrlRef.current = url
+
+    // If the roast is already cached server-side, navigate immediately — no GitHub API calls needed
+    if (cachedRoastRef.current) {
+      router.push(`/roast/${encodeURIComponent(parsed.owner)}/${encodeURIComponent(parsed.repo)}?profanity=${profanity}`)
+      return
+    }
 
     let resolvedSummary = summaryRef.current
 
