@@ -75,10 +75,9 @@ export function Navbar() {
             {tagline}
           </span>
         </div>
-        {/* <span className="text-xs text-yellow font-medium">
-          I&apos;m running into api limits :( Check out
-          the recently roasted repos below if I don&apos;t work!
-        </span> */}
+        <span className="text-xs text-yellow font-medium">
+          Someone was spamming my API. This will be down for a bit while I figure out wtf is going on. Sorry for the inconvenience!
+        </span>
       </div>
     </nav>
   )
