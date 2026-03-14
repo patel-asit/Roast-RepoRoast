@@ -75,9 +75,9 @@ export function Navbar() {
             {tagline}
           </span>
         </div>
-        <span className="text-xs text-yellow font-medium">
+        {/* <span className="text-xs text-yellow font-medium">
           Someone was spamming my API. This will be down for a bit while I figure out wtf is going on. Sorry for the inconvenience!
-        </span>
+        </span> */}
       </div>
     </nav>
   )
