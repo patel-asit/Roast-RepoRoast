@@ -22,6 +22,48 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN ?? "",
 });
 
+const REPO_CHECK_TTL_MS = 5 * 60 * 1000;
+const repoExistenceCache = new Map();
+
+function isValidOwnerAndRepo(owner, repo) {
+  if (typeof owner !== 'string' || typeof repo !== 'string') return false;
+  const ownerTrimmed = owner.trim();
+  const repoTrimmed = repo.trim();
+  if (!ownerTrimmed || !repoTrimmed) return false;
+  if (ownerTrimmed.length > 39 || repoTrimmed.length > 100) return false;
+  return /^[A-Za-z0-9._-]+$/.test(ownerTrimmed) && /^[A-Za-z0-9._-]+$/.test(repoTrimmed);
+}
+
+async function checkPublicRepoExists(owner, repo) {
+  if (!isValidOwnerAndRepo(owner, repo)) return false;
+
+  const cacheKey = `${owner.toLowerCase()}/${repo.toLowerCase()}`;
+  const now = Date.now();
+  const cached = repoExistenceCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.exists;
+  }
+
+  const url = `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      redirect: 'manual',
+      headers: {
+        Accept: 'text/html',
+        'User-Agent': 'RepoRoast/1.0',
+      },
+    });
+
+    const exists = response.status === 200 || (response.status >= 300 && response.status < 400);
+    repoExistenceCache.set(cacheKey, { exists, expiresAt: now + REPO_CHECK_TTL_MS });
+    return exists;
+  } catch {
+    return false;
+  }
+}
+
 async function getMistralClient() {
   let idx = 0;
   try {
@@ -60,8 +102,60 @@ async function mistralCallWithRetry(fn) {
 }
 
 const app = express();
-app.use(cors());
+
+function normalizeOrigin(origin) {
+  return origin.replace(/\/+$/, '');
+}
+
+const configuredAllowedOrigins = (process.env.ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+  .map(normalizeOrigin);
+
+const allowedOrigins = configuredAllowedOrigins.length > 0
+  ? configuredAllowedOrigins
+  : ['http://localhost:3000'];
+
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  return allowedOrigins.includes(normalizeOrigin(origin));
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, process.env.NODE_ENV !== 'production');
+    }
+    if (isAllowedOrigin(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+}));
 app.use(express.json({ limit: '10mb' }));
+
+function requireAllowedOrigin(req, res, next) {
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+
+  const origin = req.get('origin');
+  if (origin && isAllowedOrigin(origin)) return next();
+
+  const referer = req.get('referer');
+  if (!origin && referer) {
+    try {
+      const refererOrigin = normalizeOrigin(new URL(referer).origin);
+      if (isAllowedOrigin(refererOrigin)) return next();
+    } catch {
+      // ignore invalid referer
+    }
+  }
+
+  return res.status(403).json({ error: 'Forbidden origin' });
+}
 
 /**
  * Convert repo_summary JSON into a compact text format.
@@ -103,7 +197,7 @@ function buildCompactPrompt(s) {
   return lines.join('\n');
 }
 
-app.post('/roast', async (req, res) => {
+app.post('/roast', requireAllowedOrigin, async (req, res) => {
   try {
     const { repo_summary, profanity } = req.body;
 
@@ -121,6 +215,11 @@ app.post('/roast', async (req, res) => {
         verdict: cached.verdict,
         cached: true,
       });
+    }
+
+    const repoExists = await checkPublicRepoExists(repo_summary.owner, repo_summary.name);
+    if (!repoExists) {
+      return res.status(404).json({ error: 'Repository does not exist or is not public.' });
     }
 
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -198,7 +297,7 @@ app.post('/roast', async (req, res) => {
   }
 });
 
-app.get('/roast-check', async (req, res) => {
+app.get('/roast-check', requireAllowedOrigin, async (req, res) => {
   try {
     const { owner, repo, profanity } = req.query;
     if (!owner || !repo) {
@@ -216,7 +315,7 @@ app.get('/roast-check', async (req, res) => {
   }
 });
 
-app.post('/pick-files', async (req, res) => {
+app.post('/pick-files', requireAllowedOrigin, async (req, res) => {
   try {
     const { paths } = req.body;
 
